@@ -1,0 +1,2 @@
+"""Local assistant server package."""
+

@@ -1,0 +1,15 @@
+[Unit]
+Description=Local AI Assistant API
+After=network.target
+
+[Service]
+Type=simple
+User=assistant
+WorkingDirectory=/opt/local-assistant-server
+EnvironmentFile=/opt/local-assistant-server/.env
+ExecStart=/opt/local-assistant-server/.venv/bin/uvicorn assistant_server.main:app --host 0.0.0.0 --port 8000 --app-dir src
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
