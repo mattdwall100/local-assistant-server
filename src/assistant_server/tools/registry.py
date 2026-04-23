@@ -1,20 +1,41 @@
-"""Interface and base classes for tools."""
-# This will allow orchestrator to work with the toolset without needing to know implementation details, and also allow tools to be modular and independently developed.
-
-from .implementations.time import getDate, getTime
+"""Tool Register"""
 
 
 
-class ToolRegistry:
-    """Placeholder tool registry for future function/tool calling."""
-    
-    _tools: dict[str, callable] = {
-        'getTime': getTime,
-        'getDate': getDate,
+
+class Registry:
+
+    getTime_tool = {
+    'type': 'function',
+    'function': {
+        'name': 'getTime',
+        'description': 'Get the current time',
+        'parameters': {
+            'type': 'object',
+            'properties': {},
+            'required': []
+        },
+    },
     }
 
-    def toolList(self) -> list[callable]:
-        return self._tools.values()
+    getDate_tool = {
+    'type': 'function',
+    'function': {
+        'name': 'getDate',
+        'description': 'Get the current date',
+        'parameters': {
+            'type': 'object',
+            'properties': {},
+            'required': []
+        },
+    },
+    }
 
-    def toolDict(self) -> list[dict[str, callable]]:
-        return self._tools
+    _registry: list[object] = [
+        getTime_tool,
+        getDate_tool,
+    ]
+
+    @classmethod
+    def get(cls):
+        return cls._registry
