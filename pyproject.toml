@@ -2,7 +2,8 @@
 name = "local-ai-assistant"
 version = "0.1.0"
 description = "Local-network AI assistant server and clients"
-requires-python = ">=3.11"
+# Pydantic's native dependency chain in this repo is not yet reliable on Python 3.14.
+requires-python = ">=3.11,<3.14"
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
