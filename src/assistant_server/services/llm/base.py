@@ -12,11 +12,11 @@ class LlmService:
 
     def complete(
         self,
-        user_text: str,
+        user_text: dict[str, str],
         memory_context: list[str],
         retrieval_context: list[str],
-        tool_schemas: list[dict[str, object]],
+        tool_list: list[callable],
     ) -> str:
-        del memory_context, retrieval_context, tool_schemas
+        del memory_context, retrieval_context, tool_list
         
-        return self.client.complete(user_text)
+        return self.client.complete(user_text, tool_list)

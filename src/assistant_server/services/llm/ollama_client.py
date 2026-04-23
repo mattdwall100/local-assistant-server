@@ -7,9 +7,14 @@ class OllamaClient:
     def __init__(self):
         self.model_name = settings.model_name
 
-    def complete(self, prompt: str) -> str:
+    def complete(
+            self, 
+            user_prompt: dict[str, str],
+            tool_list: list[callable]
+            ) -> str:
         response = ollama.chat(
             self.model_name,
-            messages=[{'role': 'user', 'content': prompt}]
+            messages=[user_prompt],
+            tools=tool_list
         )
         return response.message
