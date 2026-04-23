@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
-from assistant_server.api.schemas import ChatRequest, ChatResponse, HealthResponse
-from assistant_server.orchestrator.pipeline import AssistantPipeline
+from .schemas import ChatRequest, ChatResponse, HealthResponse
+from ..orchestrator.pipeline import AssistantPipeline
 
 api_router = APIRouter()
 pipeline = AssistantPipeline()

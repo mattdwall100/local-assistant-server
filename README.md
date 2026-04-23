@@ -12,56 +12,98 @@ This repo is structured to support long-term growth:
 
 ```text
 .
-├── assets/                      # Diagrams, docs assets, prompt assets
-├── clients/                     # Lightweight client implementations
-│   ├── raspberry-pi-client/
-│   └── windows-mic-client/
-├── deployment/                  # Deployment assets (systemd, container files later)
-│   └── systemd/
-├── scripts/                     # Local helper scripts
-├── src/
-│   └── assistant_server/
-│       ├── api/                 # HTTP layer + request/response schemas
-│       ├── core/                # Configuration and app-wide primitives
-│       ├── memory/              # Conversation/session memory placeholder
-│       ├── orchestrator/        # STT -> LLM/tool loop -> TTS coordination
-│       ├── rag/                 # Retrieval placeholder
-│       ├── services/            # STT/LLM/TTS abstractions
-│       └── tools/               # Tool registration/execution placeholder
-├── tests/
-├── .env.example
-├── pyproject.toml
-├── requirements.txt
-└── requirements-dev.txt
+|-- assets/                      # Diagrams, docs assets, prompt assets
+|-- clients/                     # Lightweight client implementations
+|   |-- raspberry-pi-client/
+|   `-- windows-mic-client/
+|-- deployment/                  # Deployment assets (systemd, container files later)
+|   `-- systemd/
+|-- scripts/                     # Local helper scripts
+|-- src/
+|   `-- assistant_server/
+|       |-- api/                 # HTTP layer + request/response schemas
+|       |-- core/                # Configuration and app-wide primitives
+|       |-- memory/              # Conversation/session memory placeholder
+|       |-- orchestrator/        # STT -> LLM/tool loop -> TTS coordination
+|       |-- rag/                 # Retrieval placeholder
+|       |-- services/            # STT/LLM/TTS abstractions
+|       `-- tools/               # Tool registration/execution placeholder
+|-- tests/
+|-- .env.example
+|-- pyproject.toml
+|-- requirements.txt
+`-- requirements-dev.txt
 ```
 
-## Quick Start (Windows PowerShell)
+## Start The App (Windows PowerShell)
 
-1. Create and activate a virtual environment:
+This project currently works with Python `3.11` to `3.13`.
+It does not support Python `3.14` yet.
+
+1. Check your Python version:
+
+```powershell
+python --version
+```
+
+2. Create a virtual environment:
+
 ```powershell
 python -m venv .venv
+```
+
+3. Activate it:
+
+```powershell
 .\.venv\Scripts\Activate.ps1
 ```
 
-2. Install dependencies:
+4. Install dependencies:
+
 ```powershell
-pip install --upgrade pip
-pip install -r requirements-dev.txt
+python -m pip install --upgrade pip
+python -m pip install -r requirements-dev.txt
 ```
 
-3. Create a local environment file:
+5. Create a local `.env` file:
+
 ```powershell
 Copy-Item .env.example .env
 ```
 
-4. Run the API:
+6. Start the API from the repo root:
+
 ```powershell
-uvicorn assistant_server.main:app --reload --host 0.0.0.0 --port 8000 --app-dir src
+python -m uvicorn assistant_server.main:app --app-dir src --host 127.0.0.1 --port 8000 --reload
 ```
 
-5. Test health endpoint:
+7. In a second PowerShell window, test the server:
+
 ```powershell
 Invoke-RestMethod http://127.0.0.1:8000/health
+```
+
+Expected response:
+
+```json
+{
+  "status": "ok"
+}
+```
+
+## If Startup Fails
+
+- If `python --version` shows `3.14`, install Python `3.13` or `3.12` and recreate `.venv`.
+- If PowerShell blocks activation, run:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+```
+
+- If `uvicorn` is not found, make sure the virtual environment is activated and rerun:
+
+```powershell
+python -m pip install -r requirements-dev.txt
 ```
 
 ## Milestone 1 Scope

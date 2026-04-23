@@ -1,0 +1,3 @@
+"""This is where all tool implementations will go"""
+# , each tool should be implemented in its own file and then imported here to be registered in the ToolRegistry. This will allow us to keep our code organized and modular, and also make it easy to add new tools in the future without needing to modify existing code.
+# tool implementations are in their own file, the reason for this is to seperate complex authenticator logic from the base.py which is just the interface, and also to keep the code organized as we add more tools. Each tool can have its own dependencies and logic, and by keeping them in separate files we can avoid a monolithic tools.py file that becomes difficult to navigate and maintain as the number of tools grows.

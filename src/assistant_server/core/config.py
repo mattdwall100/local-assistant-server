@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     api_host: str = Field(default="0.0.0.0", alias="API_HOST")
     api_port: int = Field(default=8000, alias="API_PORT")
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
+    model_name: str = Field(default="granite4:350m", alias="MODEL_NAME")
 
     # We configure the settings model to read from a .env file, and to ignore any extra fields that are not defined in the model. This allows us to have a flexible configuration setup, where we can easily add new settings without having to worry about validation errors for unknown fields.
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")

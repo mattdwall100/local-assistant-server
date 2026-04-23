@@ -2,9 +2,12 @@ from dataclasses import dataclass
 
 from assistant_server.memory.store import MemoryStore
 from assistant_server.rag.retriever import Retriever
-from assistant_server.services.llm import LlmService
+from assistant_server.services.llm.base import LlmService
 from assistant_server.tools.registry import ToolRegistry
 
+
+# Currently handling engine, state, contracts all at once.
+# state is everything that persists across turns (tool results, session id, responses etc.)
 
 @dataclass(frozen=True)
 class PipelineResult:
@@ -24,7 +27,8 @@ class AssistantPipeline:
         memory_context = self._memory.load(session_id)
         retrieval_context = self._retriever.retrieve(text)
         tool_schemas = self._tools.schemas()
-        llm_text = self._llm.complete(text, memory_context, retrieval_context, tool_schemas)
+        response = self._llm.complete(text, memory_context, retrieval_context, tool_schemas)
+        llm_text = response.content
         resolved_session = self._memory.save(session_id=session_id, user_text=text, assistant_text=llm_text)
         return PipelineResult(text=llm_text, session_id=resolved_session)
 
