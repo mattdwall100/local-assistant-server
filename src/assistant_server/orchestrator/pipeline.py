@@ -31,35 +31,53 @@ class AssistantPipeline:
         retrieval_context = self._retriever.retrieve(text)
         tool_list = self._tools.toolList()
         
+        memory_context.append(user_prompt)
+        messages = memory_context
+
         # Call 1 to LLM
-        response = self._llm.complete(user_prompt, memory_context, retrieval_context, tool_list)
+        print(messages)
+        response = self._llm.complete(messages, retrieval_context, tool_list)
         llm_text = response.content
+        #add to chat history
+        messages.append(response)
 
         # Refactor Later:
         # Tool Loop
-
+        toolsCalled = False
         if response.tool_calls:
+            print('attempting tool calls')
             for tool in response.tool_calls:
                 # Ollama turns our function list into a much of ToolCall objects, they contain a function field,
                 # which is a Function object, holding a name and arguments, so we get our function from the name
                 if function_to_call := self._tools.toolDict().get(tool.function.name):
+                    toolsCalled = True
+
                     print(f'Calling tool {tool.function.name} with arguments {tool.function.arguments}')
                     tool_response = function_to_call(**tool.function.arguments)
                     print(f'Tool response: {tool_response}')
+                    messages.append({'role': 'tool', 'content': tool_response})
+                    print("added tool response to messages")
                 else:
+                    # If a tool call fails by name call
                     print(f'Tool {tool.function.name} not found in registry.')
-                
-            # we use the result of the last successful tool call it seems
-            # this should be replaced later with a memory call
+            
 
-            # add memory to get tool augmented response from LLM
+            # if there was a successful tool call, toolsCalled = True
+            if toolsCalled:
+                # we will get a new tool-augmented response to overwrite the first, we provide it no tool calls because we dont want an infinite loop
+                print(messages)
+                response = self._llm.complete(messages, retrieval_context, [])
+                # save response to chat history
+                messages.append(response)
+            else:
+                # TEMPORARY {if all tool calls fail, we return with a disclaimer}
+                resolved_session = self._memory.save(session_id=session_id, messages=messages)
+                return PipelineResult(text=llm_text+"   <TOOL CALL FAILED>", session_id=ressolved_session)
 
+        
 
-
-
-
-        resolved_session = self._memory.save(session_id=session_id, user_text=text, assistant_text=llm_text)
-        return PipelineResult(text=llm_text, session_id=resolved_session)
+        resolved_session = self._memory.save(session_id=session_id, messages=messages)
+        return PipelineResult(text=response.content, session_id=resolved_session)
     
 
 

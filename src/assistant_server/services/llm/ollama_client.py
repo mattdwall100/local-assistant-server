@@ -9,12 +9,14 @@ class OllamaClient:
 
     def complete(
             self, 
-            user_prompt: dict[str, str],
+            messages: list[dict[str, str]],
             tool_list: list[callable]
             ) -> str:
         response = ollama.chat(
             self.model_name,
-            messages=[user_prompt],
+            messages=messages,
             tools=tool_list
         )
+        print(messages)
+        print(response)
         return response.message

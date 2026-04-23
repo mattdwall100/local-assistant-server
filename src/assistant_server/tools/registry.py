@@ -1,7 +1,7 @@
 """Interface and base classes for tools."""
 # This will allow orchestrator to work with the toolset without needing to know implementation details, and also allow tools to be modular and independently developed.
 
-from .implementations.time import getTime
+from .implementations.time import getDate, getTime
 
 
 
@@ -10,6 +10,7 @@ class ToolRegistry:
     
     _tools: dict[str, callable] = {
         'getTime': getTime,
+        'getDate': getDate,
     }
 
     def toolList(self) -> list[callable]:
