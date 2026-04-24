@@ -18,5 +18,4 @@ class OllamaClient:
             tools=tool_list
         )
         print(messages)
-        print(response)
-        return response.message
+        return response

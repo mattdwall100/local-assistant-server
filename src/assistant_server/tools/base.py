@@ -16,7 +16,9 @@ class ToolRegistry:
     }
 
     def toolRegistry(self) -> list[callable]:
-        return self._registry
+        #print(self._registry)
+        #return self._registry
+        return list(self._tools.values())
 
     def toolDict(self) -> list[dict[str, callable]]:
         return self._tools

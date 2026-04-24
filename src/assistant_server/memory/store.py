@@ -17,7 +17,7 @@ class MemoryStore:
         else:
             return []
         
-    def save(self, session_id: str | None, messages: list[dict[str,]]) -> str:
+    def update(self, session_id: str | None, messages: list[dict[str,]]) -> str:
         resolved_session = session_id or str(uuid.uuid4()) # generates a new id if None
         self._sessions[resolved_session] = messages
         return resolved_session
