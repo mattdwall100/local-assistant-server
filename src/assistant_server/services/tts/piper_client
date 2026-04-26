@@ -1,0 +1,21 @@
+import wave
+from piper import PiperVoice
+
+
+
+
+class PiperTTS:
+    def __init__(self, voice_path: str):
+        self.voice = PiperVoice.load(voice_path)
+
+    def synthesize(self, text: str, output_path: str):
+        """Synthesize the given text and save it to the specified output path."""
+        with wave.open(output_path, "wb") as wav_file:
+            self.voice.synthesize_wav(text, wav_file)
+    
+    def stream_synthesize(self, text: str):
+        """Example of streaming synthesis, yielding audio chunks as they are generated."""
+        for chunk in self.voice.synthesize(text):
+            #set_audio_format(chunk.sample_rate, chunk.sample_width, chunk.sample_channels)
+            #write_raw_data(chunk.audio_int16_bytes)
+            yield chunk
