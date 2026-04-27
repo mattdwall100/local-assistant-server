@@ -1,28 +1,25 @@
 from functools import lru_cache
-from typing import Literal
+from pathlib import Path
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class Settings(BaseSettings):
-    # Application settings for the local assistant server
+class ClientSettings(BaseSettings):
+    # Application settings for the mic client
     # First we provide default values for each setting, and also specify the corresponding environment variable name using the `alias` parameter in the Field function.
-    app_name: str = Field(default="Local AI Assistant", alias="APP_NAME")
-    app_env: Literal["dev", "test", "prod"] = Field(default="dev", alias="APP_ENV")
-    api_host: str = Field(default="0.0.0.0", alias="API_HOST")
-    api_port: int = Field(default=8000, alias="API_PORT")
-    log_level: str = Field(default="INFO", alias="LOG_LEVEL")
-    model_name: str = Field(default="granite4:350m", alias="MODEL_NAME")
-    tts_voice_path: str = Field(default="models/tts/en_GB-alan-medium.onnx", alias="TTS_VOICE_PATH")
-    tts_output_path: str = Field(default="tests/voice_results/output.wav", alias="TTS_OUTPUT_PATH")
-    faster_whisper_model: str = Field(default="tiny", alias="FASTER_WHISPER_MODEL")
+    assistant_api_base_url: str = Field(default="http://localhost:8000", alias="ASSISTANT_API_BASE_URL")
+    assistant_api_timeout_seconds: float = Field(default=30.0, alias="ASSISTANT_API_TIMEOUT_SECONDS")
+    mic_sample_rate: int = Field(default=16000, alias="MIC_SAMPLE_RATE")
+    mic_channels: int = Field(default=1, alias="MIC_CHANNELS")
+    mic_block_size: int = Field(default=1024, alias="MIC_BLOCK_SIZE")
+    playback_sample_rate: int = Field(default=22050, alias="PLAYBACK_SAMPLE_RATE")
+
 
     # We configure the settings model to read from a .env file, and to ignore any extra fields that are not defined in the model. This allows us to have a flexible configuration setup, where we can easily add new settings without having to worry about validation errors for unknown fields.
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
 # lru_cache is a decorator that allows us to cache the result of the get_settings function, so that it only reads the configuration from the environment variables once, and then returns the cached settings object on subsequent calls. This can improve performance by avoiding unnecessary re-reading of environment variables, while still allowing us to easily access the settings throughout our application.
 @lru_cache(maxsize=1)
-def get_settings() -> Settings:
-    return Settings()
-
+def get_client_settings() -> ClientSettings:
+    return ClientSettings()
