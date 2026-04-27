@@ -9,7 +9,7 @@ class ClientSettings(BaseSettings):
     # Application settings for the mic client
     # First we provide default values for each setting, and also specify the corresponding environment variable name using the `alias` parameter in the Field function.
     assistant_api_base_url: str = Field(default="http://localhost:8000", alias="ASSISTANT_API_BASE_URL")
-    assistant_api_timeout_seconds: float = Field(default=30.0, alias="ASSISTANT_API_TIMEOUT_SECONDS")
+    assistant_api_timeout_seconds: float = Field(default=300.0, alias="ASSISTANT_API_TIMEOUT_SECONDS")
     mic_sample_rate: int = Field(default=16000, alias="MIC_SAMPLE_RATE")
     mic_channels: int = Field(default=1, alias="MIC_CHANNELS")
     mic_block_size: int = Field(default=1024, alias="MIC_BLOCK_SIZE")

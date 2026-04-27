@@ -3,6 +3,7 @@ from piper import PiperVoice
 from pathlib import Path
 from assistant_server.core.config import get_settings
 
+
 # Default paths
 settings = get_settings()
 VOICE_PATH = settings.tts_voice_path
@@ -14,7 +15,7 @@ class PiperTTS:
         self.voice = PiperVoice.load(voice_path)
         self.output_path = output_path
 
-    def synthesize(self, text: str, output_path: str = None) -> None:
+    def synthesize_file(self, text: str, output_path: str = None) -> None:
         """Synthesize the given text and save it to the specified output path."""
         # Default outputpath is set to self.output_path if not provided
         if output_path is not None:
@@ -26,7 +27,4 @@ class PiperTTS:
     def stream_synthesize(self, text: str):
         """Example of streaming synthesis, yielding audio chunks as they are generated."""
         for chunk in self.voice.synthesize(text):
-            #set_audio_format(chunk.sample_rate, chunk.sample_width, chunk.sample_channels)
-            #write_raw_data(chunk.audio_int16_bytes)
-            yield chunk
-
+            yield chunk.audio_int16_bytes

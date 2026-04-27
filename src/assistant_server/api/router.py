@@ -1,5 +1,7 @@
 from fastapi import APIRouter
-from fastapi import UploadFile, File
+from fastapi import UploadFile, File, Form
+from fastapi.responses import StreamingResponse
+from typing import Optional
 
 from .schemas import ChatRequest, ChatResponse, HealthResponse
 from ..orchestrator.pipeline import AssistantPipeline
@@ -7,6 +9,7 @@ from ..orchestrator.pipeline import AssistantPipeline
 from ..services.tts.base import TtsService
 from ..services.stt.base import SttService
 import io
+
 
 
 api_router = APIRouter()
@@ -26,18 +29,51 @@ def chat(payload: ChatRequest) -> ChatResponse:
     result = pipeline.run(payload.text, payload.session_id)
     return ChatResponse(text=result.text, session_id=result.session_id)
 
-@api_router.post('/synthesize', response_model=ChatResponse)
-def synthesize(payload: ChatRequest) -> ChatRequest:
-    
-    #output_path = f"{payload.session_id}.wav" if payload.session_id else "output.wav"
-    tts_service.synthesize(payload.text)
-    return payload
 
 @api_router.post("/transcribe", response_model=ChatResponse)
-async def transcribe(file: UploadFile = File(...)) -> ChatResponse:
+async def transcribe(file: UploadFile = File(...),
+                     session_id: Optional[str] = Form(None)) -> ChatResponse:
     audio_bytes = await file.read()
     audio_stream = io.BytesIO(audio_bytes)
     audio_stream.seek(0)
 
     text = stt_service.transcribe(audio_stream)
-    return ChatResponse(text=text, session_id=None)
+    return ChatResponse(text=text, session_id=session_id) 
+
+
+@api_router.post('/synthesize')
+def synthesize(payload: ChatRequest) -> StreamingResponse:
+    """Send a stream of bytes back to the client, speaking the text sent"""
+    return StreamingResponse(
+        tts_service.stream_synthesize(payload.text),
+        media_type='application/octet-stream',
+        headers={
+            "X-Session-ID": "DummySessionID"
+        }
+    )
+
+
+@api_router.post("/speak")
+async def speak(file: UploadFile = File(...),
+                     session_id: Optional[str] = Form(None)) -> ChatResponse:
+    # Recieve audio bytes
+    audio_bytes = await file.read()
+    audio_stream = io.BytesIO(audio_bytes)
+    audio_stream.seek(0)
+
+    # Give to STT
+    text = stt_service.transcribe(audio_stream)
+    
+    # Give to LLM for a reply
+    result = pipeline.run(text, session_id)
+    reply = result.text
+    resolved_session = result.session_id
+
+    # Give to TTS as bytes
+    return StreamingResponse(
+        tts_service.stream_synthesize(reply),
+        media_type='application/octet-stream',
+        headers={
+            "X-Session-ID": resolved_session
+        }
+    )

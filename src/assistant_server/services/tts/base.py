@@ -10,8 +10,7 @@ class TtsService:
     def synthesize(self, text: str, output_path: str = None) -> None:
         self.voice.synthesize(text)
 
-    def stream_synthesize(self, text: str, output_path:str = None) -> None:
+    def stream_synthesize(self, text: str, output_path:str = None) -> bytes:
         for chunk in self.voice.stream_synthesize(text):
-            # Process the chunk (e.g., save to file, stream to client, etc.)
             yield chunk
 
