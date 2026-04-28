@@ -9,6 +9,9 @@ from .audio_utils import numpy_to_wav_bytes
 
 from pathlib import Path
 from datetime import datetime
+from ..core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 class MicrophoneRecorder:
@@ -23,7 +26,7 @@ class MicrophoneRecorder:
 
     def _callback(self, indata, frames, time, status):
         if status:
-            print(status)
+            logger.warning(f"recorder_status | status={status}")
         self.frames.append(indata.copy())
 
     def start(self):
@@ -49,7 +52,7 @@ class MicrophoneRecorder:
             audio_bytes = numpy_to_wav_bytes(audio_array, self.sample_rate)
             return audio_bytes
         else:
-            print("No frame data found")
+            logger.warning("recorder_stopped | reason=no_frame_data_found")
             return None
 
 
@@ -61,14 +64,13 @@ class MicrophoneRecorder:
             channels=self.channels,
             dtype='int16'
         )
-        print("Recording started...")
+        logger.info(f"recording_started | max_duration={max_duration}")
         if wait:
             sd.wait()  # Wait until max wait time is finished
         # turn to wav bytes before returning to controller and orchestrator and then api
         audio_bytes = numpy_to_wav_bytes(np.asarray(audio, dtype='int16'), self.sample_rate)
-
+        logger.info(f"recording_stopped | bytes_recorded={len(audio_bytes)}")
         return audio_bytes
-        #return np.asarray(audio, dtype="int16").tobytes()
 
 
 class PushToTalkController:
@@ -85,28 +87,27 @@ class PushToTalkController:
         if key == keyboard.Key.space and not self.is_recording:
             self.is_recording = True
             self.orchestrator.stop_speech()
-            print("Recording...")
+            logger.info("recording_started | mode=push_to_talk")
             self.recorder.start() 
 
     def stop_recording(self, key) -> None:
         if key == keyboard.Key.space and self.is_recording:
             self.is_recording = False
             audio_bytes = self.recorder.stop() # Stop the recording immediately and save bytes
-            print("Recording stopped.")                       
-
+                       
             # Process the recorded audio data
             if not audio_bytes:
-                print("No audio found")
+                logger.warning("recording_stopped | reason=no_audio_found")
             elif len(audio_bytes)< 1025:
-                print("Audio too short")
+                logger.warning("recording_stopped | reason=audio_too_short")
             else:
+                logger.info(f"recording_stopped | bytes_recorded={len(audio_bytes)}")
                 self.handle_audio(audio_bytes)
 
     def handle_audio(self, audio_bytes) -> None:
         """Handle the recorded audio data, e.g., by sending it to the Orchestrator"""
         if audio_bytes is not None:
-            print(f"Recorded audio data length: {len(audio_bytes)} bytes")
-            response = self.orchestrator.speak(audio_bytes)
+            self.orchestrator.speak(audio_bytes)
     
     def listen_for_keypresses(self) -> None:
         """Listen for keypresses to control recording."""
@@ -117,5 +118,3 @@ class PushToTalkController:
         
         listener.start()
         listener.join()
-
-

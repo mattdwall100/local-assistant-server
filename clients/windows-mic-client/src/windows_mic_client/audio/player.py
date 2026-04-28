@@ -7,7 +7,9 @@ from typing import Iterable
 from fastapi.responses import StreamingResponse
 
 import threading
+from ..core.logging import get_logger
 
+logger = get_logger(__name__)
 
 
 class AudioPlayer:
@@ -20,11 +22,13 @@ class AudioPlayer:
 
     def play_wav_bytes(self, audio_bytes: bytes) -> None:
         """Play the given audio bytes."""
+        logger.info(f"playback_started | bytes={len(audio_bytes)}")
         audio_array, sr = sf.read(
             io.BytesIO(audio_bytes)
         )
         sd.play(audio_array, sr)
         sd.wait()
+        logger.info("playback_finished | status=completed")
 
     def play_wav_stream(self, response: StreamingResponse) -> None:
         self.stop_flag.clear()
@@ -43,11 +47,13 @@ class AudioPlayer:
                 dtype='int16'
             )
             self.current_stream.start()
+            logger.info("playback_started | type=stream")
             
             try:
                 # Writes chunks to stream until stopped
                 for chunk in chunk_iterator:
                     if self.stop_flag.is_set():
+                        logger.info("playback_finished | status=interrupted")
                         break
                     elif not chunk:
                         continue
@@ -62,11 +68,10 @@ class AudioPlayer:
                         self.current_stream.close()
                 finally:
                     self.current_stream = None
+                    if not self.stop_flag.is_set():
+                        logger.info("playback_finished | status=completed")
 
         threading.Thread(target=_play_callback, daemon=True).start()
     
     def stop_playback(self):
         self.stop_flag.set()
-        
-
-
