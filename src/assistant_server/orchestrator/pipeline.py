@@ -1,11 +1,16 @@
 from dataclasses import dataclass
 
+from assistant_server.services.llm.base import LlmService
+from assistant_server.services.stt.base import SttService
+from assistant_server.services.tts.base import TtsService
+
 from assistant_server.memory.store import MemoryStore
 from assistant_server.rag.retriever import Retriever
-from assistant_server.services.llm.base import LlmService
 from assistant_server.tools.base import ToolRegistry
 
 from .state import SessionState
+
+from typing import Tuple
 
 
 # Currently handling engine, state, contracts all at once.
@@ -19,12 +24,31 @@ class PipelineResult:
 
 class AssistantPipeline:
     def __init__(self) -> None:
+        self._stt = SttService()
         self._llm = LlmService()
+        self._tts = TtsService()
+
         self._tools = ToolRegistry()
         self._memory = MemoryStore()
         self._retriever = Retriever()
-# 
-    def run(self, text: str, session_id: str | None = None) -> PipelineResult:
+
+    def run(self, audio_bytes: bytes, session_id: str | None) -> Tuple[bytes, str]:
+        """Runs the full STT -> (LLM + tools) -> TTS Pipeline"""
+        # Give to STT
+        text = self._stt.transcribe(audio_bytes)
+
+        # Give to LLM for a reply
+        result = self.run_llm(text, session_id)
+        reply = result.text
+        resolved_id = result.session_id
+
+        # Give to TTS   (Create the audio bytes stream)
+        stream_response = self._tts.stream_synthesize(reply)
+
+        return stream_response, resolved_id
+
+
+    def run_llm(self, text: str, session_id: str | None = None) -> PipelineResult:
         """Main pipeline method to process user input and return a response, along with an updated session id."""
 
         #Context Aggregation

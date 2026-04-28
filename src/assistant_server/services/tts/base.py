@@ -1,4 +1,6 @@
 from .piper_client import PiperTTS
+from typing import Generator, Any
+
 
 
 class TtsService:
@@ -10,7 +12,7 @@ class TtsService:
     def synthesize(self, text: str, output_path: str = None) -> None:
         self.voice.synthesize(text)
 
-    def stream_synthesize(self, text: str, output_path:str = None) -> bytes:
+    def stream_synthesize(self, text: str, output_path:str = None) -> Generator[Any, Any, Any]:
         for chunk in self.voice.stream_synthesize(text):
             yield chunk
 
