@@ -4,7 +4,7 @@ from .api.router import api_router
 from .core.config import get_settings
 from .core.logging import get_logger
 
-logger = get_logger()
+logger = get_logger(__name__)
 
 
 def create_app() -> FastAPI:
@@ -14,5 +14,5 @@ def create_app() -> FastAPI:
     return app
 
 
-logger.info("Starting local assistant server...")
+logger.info("Starting assistant server...")
 app = create_app()

@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Tuple
 
 from assistant_server.services.llm.base import LlmService
 from assistant_server.services.stt.base import SttService
@@ -9,9 +10,10 @@ from assistant_server.rag.retriever import Retriever
 from assistant_server.tools.base import ToolRegistry
 
 from .state import SessionState
+from assistant_server.core.logging import get_logger
+from assistant_server.utils.latency_logger import log_latency
 
-from typing import Tuple
-
+logger = get_logger(__name__)
 
 # Currently handling engine, state, contracts all at once.
 # state is everything that persists across turns (tool results, session id, responses etc.)
@@ -34,18 +36,24 @@ class AssistantPipeline:
 
     def run(self, audio_bytes: bytes, session_id: str | None) -> Tuple[bytes, str]:
         """Runs the full STT -> (LLM + tools) -> TTS Pipeline"""
-        # Give to STT
-        text = self._stt.transcribe(audio_bytes)
-
-        # Give to LLM for a reply
-        result = self.run_llm(text, session_id)
-        reply = result.text
-        resolved_id = result.session_id
-
-        # Give to TTS   (Create the audio bytes stream)
-        stream_response = self._tts.stream_synthesize(reply)
-
-        return stream_response, resolved_id
+        logger.info(f"pipeline_started | session_id={session_id}")
+        
+        with log_latency(logger, "pipeline_completed", session_id=session_id):
+            # Give to STT
+            with log_latency(logger, "stt_completed", session_id=session_id):
+                text = self._stt.transcribe(audio_bytes)
+    
+            # Give to LLM for a reply
+            result = self.run_llm(text, session_id)
+            reply = result.text
+            resolved_id = result.session_id
+    
+            # Give to TTS (Create the audio bytes stream)
+            # This generates the stream object, real TTS latency is measured in chunks by the client or in a deeper wrapper
+            with log_latency(logger, "tts_stream_initialized", session_id=resolved_id):
+                stream_response = self._tts.stream_synthesize(reply)
+    
+            return stream_response, resolved_id
 
 
     def run_llm(self, text: str, session_id: str | None = None) -> PipelineResult:
@@ -61,8 +69,8 @@ class AssistantPipeline:
         messages = memory_context
 
         # Call 1 to LLM
-        print(messages)
-        response = self._llm.complete(messages, retrieval_context, tool_list)
+        with log_latency(logger, "llm_inference_completed", session_id=session_id, phase="initial_call"):
+            response = self._llm.complete(messages, retrieval_context, tool_list)
         
         # Save response to chat history
         messages.append({
@@ -98,46 +106,31 @@ class AssistantPipeline:
         messages = session_state.messages
         session_id = session_state.session_id
 
-
         toolsCalled = False
         if response.message.tool_calls:
-            print('attempting tool calls')
+            logger.info(f"tool_evaluation_started | session_id={session_id} tool_count={len(response.message.tool_calls)}")
             for tool in response.message.tool_calls:
-                # Ollama turns our function list into a much of ToolCall objects, they contain a function field,
-                # which is a Function object, holding a name and arguments, so we get our function from the name
                 if function_to_call := self._tools.toolDict().get(tool.function.name):
                     toolsCalled = True
 
-                    print(f'Calling tool {tool.function.name} with arguments {tool.function.arguments}')
-                    tool_response = function_to_call(**tool.function.arguments)
-                    print(f'Tool response: {tool_response}')
-                    messages.append({'role': 'tool', 'content': str(tool_response), 'tool_name': tool.function.name})
-                    print("added tool response to messages")
+                    with log_latency(logger, "tool_execution_completed", session_id=session_id, tool_name=tool.function.name):
+                        tool_response = function_to_call(**tool.function.arguments)
+                        messages.append({'role': 'tool', 'content': str(tool_response), 'tool_name': tool.function.name})
                 else:
-                    # If a tool call fails by name call
-                    print(f'Tool {tool.function.name} not found in registry.')
+                    logger.warning(f"tool_not_found | session_id={session_id} tool_name={tool.function.name}")
             
-
-            # if there was a successful tool call, toolsCalled = True
             if toolsCalled:
-                # we will get a new tool-augmented response to overwrite the first, we provide it no tool calls because we dont want an infinite loop
-                response = self._llm.complete(messages, retrieval_context=None, tool_list=None)
-                # save response to chat history
-                 # Save response to chat history
+                with log_latency(logger, "llm_inference_completed", session_id=session_id, phase="post_tool_call"):
+                    response = self._llm.complete(messages, retrieval_context=None, tool_list=None)
+                
                 messages.append({
                     "role": "assistant",
                     "content": response.message.content
                 })
             else:
-                # TEMPORARY {if all tool calls fail, we return with a disclaimer
                 session_state.toolCallFailed()
-
 
         session_state.messages = messages
         session_state.response = response
 
         return session_state
-    
-    
-
-
