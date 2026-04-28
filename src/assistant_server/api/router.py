@@ -48,14 +48,14 @@ def synthesize(payload: ChatRequest) -> StreamingResponse:
         tts_service.stream_synthesize(payload.text),
         media_type='application/octet-stream',
         headers={
-            "X-Session-ID": "DummySessionID"
+            "X-Session-ID": ""
         }
     )
 
 
 @api_router.post("/speak")
 async def speak(file: UploadFile = File(...),
-                     session_id: Optional[str] = Form(None)) -> ChatResponse:
+                     session_id: Optional[str] = Form(None)) -> StreamingResponse:
     # Recieve audio bytes
     audio_bytes = await file.read()
     audio_stream = io.BytesIO(audio_bytes)
@@ -65,6 +65,7 @@ async def speak(file: UploadFile = File(...),
     text = stt_service.transcribe(audio_stream)
     
     # Give to LLM for a reply
+    print(session_id)
     result = pipeline.run(text, session_id)
     reply = result.text
     resolved_session = result.session_id

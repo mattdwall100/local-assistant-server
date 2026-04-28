@@ -4,8 +4,7 @@ import numpy as np
 from pynput import keyboard
 
 from typing import Optional
-
-from ..client.assistant_api_client import AssistantAPIClient
+from ..orchestrator.orchestrator import ClientOrchestrator
 from .audio_utils import numpy_to_wav_bytes
 
 from pathlib import Path
@@ -65,7 +64,7 @@ class MicrophoneRecorder:
         print("Recording started...")
         if wait:
             sd.wait()  # Wait until max wait time is finished
-        # turn to wav bytes before returning to controller and api
+        # turn to wav bytes before returning to controller and orchestrator and then api
         audio_bytes = numpy_to_wav_bytes(np.asarray(audio, dtype='int16'), self.sample_rate)
 
         return audio_bytes
@@ -75,9 +74,9 @@ class MicrophoneRecorder:
 class PushToTalkController:
     """Push to talk controls handler for MicrophoneRecorder"""
 
-    def __init__(self, recorder: MicrophoneRecorder, api: AssistantAPIClient):
+    def __init__(self, recorder: MicrophoneRecorder, orchestrator: ClientOrchestrator):
         self.recorder = recorder
-        self.api = api
+        self.orchestrator = orchestrator
         self.is_recording = False
 
         self.listen_for_keypresses()
@@ -85,6 +84,7 @@ class PushToTalkController:
     def start_recording(self, key) -> None:
         if key == keyboard.Key.space and not self.is_recording:
             self.is_recording = True
+            self.orchestrator.stop_speech()
             print("Recording...")
             self.recorder.start() 
 
@@ -103,24 +103,10 @@ class PushToTalkController:
                 self.handle_audio(audio_bytes)
 
     def handle_audio(self, audio_bytes) -> None:
-        """Handle the recorded audio data, e.g., by sending it to the Assistant API."""
+        """Handle the recorded audio data, e.g., by sending it to the Orchestrator"""
         if audio_bytes is not None:
-            # Here you would send audio_bytes to the Assistant API for transcription
             print(f"Recorded audio data length: {len(audio_bytes)} bytes")
-
-            # Audio file test
-            #debug_dir = Path(r'C:\Users\Admin\Documents\Projects\Local-AI-Assistant\local-assistant-server\clients\windows-mic-client\tests\audio_files')
-            #debug_dir.mkdir(exist_ok=True)
-            #filename = debug_dir / f"mic_{datetime.now().strftime('%Y%m%d_%H%M%S')}.wav"
-            #filename.write_bytes(audio_bytes)
-
-            #transcribed_json = self.api.transcribe(audio_bytes)
-            #print(transcribed_json)
-
-            print("Sending Speak Request...")
-            response = self.api.speak(audio_bytes, session_id="TestSession")
-            print("Success")
-            
+            response = self.orchestrator.speak(audio_bytes)
     
     def listen_for_keypresses(self) -> None:
         """Listen for keypresses to control recording."""
