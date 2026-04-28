@@ -68,8 +68,7 @@ class AudioPlayer:
                         self.current_stream.close()
                 finally:
                     self.current_stream = None
-                    if not self.stop_flag.is_set():
-                        logger.info("playback_finished | status=completed")
+                    logger.info("playback_finished | status=completed")
 
         threading.Thread(target=_play_callback, daemon=True).start()
     
