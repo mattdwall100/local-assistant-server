@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from .client.assistant_api_client import AssistantAPIClient
-from .config import get_client_settings
+from .core.config import get_client_settings
 from .audio.recorder import MicrophoneRecorder, PushToTalkController
 from .audio.player import AudioPlayer
 from .orchestrator.orchestrator import ClientOrchestrator

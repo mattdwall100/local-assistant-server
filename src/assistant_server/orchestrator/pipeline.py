@@ -68,6 +68,7 @@ class AssistantPipeline:
         memory_context.append(user_prompt)
         messages = memory_context
 
+        print(messages)
         # Call 1 to LLM
         with log_latency(logger, "llm_inference_completed", session_id=session_id, phase="initial_call"):
             response = self._llm.complete(messages, retrieval_context, tool_list)

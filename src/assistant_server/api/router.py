@@ -9,7 +9,7 @@ from ..orchestrator.pipeline import AssistantPipeline
 from ..services.tts.base import TtsService
 from ..services.stt.base import SttService
 from ..core.logging import get_logger
-from ..utils.timer import log_latency
+from ..utils.latency_logger import log_latency
 import io
 
 

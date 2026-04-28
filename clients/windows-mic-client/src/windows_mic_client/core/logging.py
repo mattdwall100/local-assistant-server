@@ -1,6 +1,6 @@
 """Core logging logic and configuration."""
 import logging
-from config import get_client_settings
+from .config import get_client_settings
 
 settings = get_client_settings()
 

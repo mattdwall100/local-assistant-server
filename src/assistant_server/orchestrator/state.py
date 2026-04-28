@@ -2,7 +2,7 @@
 from ollama import ChatResponse
 from ..core.logging import get_logger
 
-logger = get_logger()
+logger = get_logger(__name__)
 
 class SessionState:
     """Class to hold the state of a session, including memory, retriever, and tools."""
