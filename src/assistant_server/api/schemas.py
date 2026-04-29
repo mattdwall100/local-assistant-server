@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-
+from typing import Generator
 
 class HealthResponse(BaseModel):
     status: str = "ok"
@@ -18,3 +18,13 @@ class ChatResponse(BaseModel):
     text: str
     session_id: str | None = None
 
+# For sending audio streams as output of Piper
+class AudioStream:
+    def __init__(self, 
+                 generator: Generator, 
+                 sample_rate: int =16000, 
+                 fallback_text: str | None = None
+                 ) -> None:
+        self.generator = generator
+        self.sample_rate = sample_rate
+        self.fallback_text

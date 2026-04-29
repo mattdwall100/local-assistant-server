@@ -13,6 +13,8 @@ from .state import SessionState
 from assistant_server.core.logging import get_logger
 from assistant_server.utils.latency_logger import log_latency
 
+from .fallback import FallbackHandler
+
 logger = get_logger(__name__)
 
 # Currently handling engine, state, contracts all at once.
@@ -29,30 +31,50 @@ class AssistantPipeline:
         self._stt = SttService()
         self._llm = LlmService()
         self._tts = TtsService()
+        self._fallback_handler = FallbackHandler()
 
         self._tools = ToolRegistry()
         self._memory = MemoryStore()
         self._retriever = Retriever()
 
     def run(self, audio_bytes: bytes, session_id: str | None) -> Tuple[bytes, str]:
-        """Runs the full STT -> (LLM + tools) -> TTS Pipeline"""
+        """Runs the full STT -> (LLM + tools) -> TTS Pipeline
+        
+        Note:
+         - "with log_latency" is a context manager to track and log event latency
+         - "self.fallback_handler.handle(event_name, e)" attempts to return a graceful degredation
+        of AudioStream's containing fallback audio, with fallback text in header"""
+
         logger.info(f"pipeline_started | session_id={session_id}")
         
         with log_latency(logger, "pipeline_completed", session_id=session_id):
             # Give to STT
-            with log_latency(logger, "stt_completed", session_id=session_id):
-                text = self._stt.transcribe(audio_bytes)
+            try:
+                with log_latency(logger, "stt_completed", session_id=session_id):
+                    text = self._stt.transcribe(audio_bytes)
+            except:
+                # error logged by log_latency error handling
+                return self._fallback_handler.handle("stt", e), session_id
     
             # Give to LLM for a reply
-            result = self.run_llm(text, session_id)
+            try:
+                result = self.run_llm(text, session_id)
+            except:
+                # Again log_latency logs error on llm call
+                return self._fallback_handler.handle("llm", e), session_id
+        
             reply = result.text
             resolved_id = result.session_id
     
             # Give to TTS (Create the audio bytes stream)
             # This generates the stream object, real TTS latency is measured in chunks by the client or in a deeper wrapper
-            with log_latency(logger, "tts_stream_initialized", session_id=resolved_id):
-                stream_response = self._tts.stream_synthesize(reply)
-    
+            try:
+                with log_latency(logger, "tts_stream_initialized", session_id=resolved_id):
+                    stream_response = self._tts.stream_synthesize(reply)
+            except Exception as e:
+                # log_latency logs error
+                return self._fallback_handler.handle("stt", e), resolved_id
+            
             return stream_response, resolved_id
 
 

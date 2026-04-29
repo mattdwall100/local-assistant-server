@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     tts_voice_path: str = Field(default="models/tts/en_GB-alan-medium.onnx", alias="TTS_VOICE_PATH")
     tts_output_path: str = Field(default="tests/voice_results/output.wav", alias="TTS_OUTPUT_PATH")
     faster_whisper_model: str = Field(default="tiny", alias="FASTER_WHISPER_MODEL")
+    fallback_path: str = Field(default="assets/fallback_audio", alias="FALLBACK_PATH")
 
     # We configure the settings model to read from a .env file, and to ignore any extra fields that are not defined in the model. This allows us to have a flexible configuration setup, where we can easily add new settings without having to worry about validation errors for unknown fields.
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")

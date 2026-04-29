@@ -9,10 +9,10 @@ class TtsService:
     def __init__(self):
         self.voice = PiperTTS()
     
-    def synthesize(self, text: str, output_path: str = None) -> None:
+    def synthesize(self, text: str) -> None:
         self.voice.synthesize(text)
 
-    def stream_synthesize(self, text: str, output_path:str = None) -> Generator[Any, Any, Any]:
+    def stream_synthesize(self, text: str) -> Generator[Any, Any, Any]:
         for chunk in self.voice.stream_synthesize(text):
             yield chunk
 

@@ -80,6 +80,7 @@ async def speak(file: UploadFile = File(...),
             stream_response,
             media_type='application/octet-stream',
             headers={
-                "X-Session-ID": resolved_id if resolved_id else ""
+                "X-Session-ID": resolved_id or "",
+                "X-Fallback-TXT": stream_response.fallback_txt or ""
             }
         )

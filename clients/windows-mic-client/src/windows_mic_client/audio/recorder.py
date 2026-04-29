@@ -11,6 +11,8 @@ from pathlib import Path
 from datetime import datetime
 from ..core.logging import get_logger
 
+import sys
+
 logger = get_logger(__name__)
 
 
@@ -103,6 +105,10 @@ class PushToTalkController:
             else:
                 logger.info(f"recording_stopped | bytes_recorded={len(audio_bytes)}")
                 self.handle_audio(audio_bytes)
+        
+        """System exit upon escape key press"""
+        if key == keyboard.Key.esc:
+            sys.exit()
 
     def handle_audio(self, audio_bytes) -> None:
         """Handle the recorded audio data, e.g., by sending it to the Orchestrator"""
