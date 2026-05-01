@@ -74,13 +74,16 @@ async def speak(file: UploadFile = File(...),
     
         # Send to pipeline
         stream_response, resolved_id = pipeline.run(audio_bytes, session_id)
-    
+
+        # if has .fallback_text, is a AudioStream object, send as is
+        if hasattr(stream_response, 'fallback_text'):
+            return stream_response
+
         # Send back the stream response
         return StreamingResponse(
             stream_response,
             media_type='application/octet-stream',
             headers={
                 "X-Session-ID": resolved_id or "",
-                "X-Fallback-TXT": stream_response.fallback_txt or ""
             }
         )

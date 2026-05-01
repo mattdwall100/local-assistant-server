@@ -66,4 +66,11 @@ class AssistantAPIClient:
                 timeout=self.timeout_seconds,
             )
             resolved_id = response.headers.get("X-Session-ID")
+
+            try:
+                fallback_text = response.headers.get("X-Fallback-TXT")
+                logger.info(f"Fallback_text | {fallback_text}")
+            except:
+                pass
+
             return response, resolved_id

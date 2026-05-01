@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import Generator
+from fastapi.responses import StreamingResponse
 
 class HealthResponse(BaseModel):
     status: str = "ok"
@@ -27,4 +28,20 @@ class AudioStream:
                  ) -> None:
         self.generator = generator
         self.sample_rate = sample_rate
-        self.fallback_text
+        self.fallback_text = fallback_text
+
+class FallbackStream(StreamingResponse):
+    def __init__(self, 
+                 generator: Generator,
+                 fallback_text: str,
+                 session_id: str
+                 ) -> None:
+        super().__init__(
+            generator,
+            media_type='application/octet-stream',
+            headers={
+                "X-Session-ID": session_id or "",
+                "X-Fallback-TXT": fallback_text
+            }            
+        )
+        self.fallback_text = fallback_text

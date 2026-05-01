@@ -19,7 +19,7 @@ class PiperTTS:
         """Synthesize the given text and save it to the specified output path."""
         # Default outputpath is set to self.output_path if not provided
         if output_path is not None:
-            self.output_path = Path(output_path)
+            self.output_path = str(Path(output_path))
 
         with wave.open(self.output_path, "wb") as wav_file:
             self.voice.synthesize_wav(text, wav_file)

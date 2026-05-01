@@ -31,7 +31,7 @@ class AssistantPipeline:
         self._stt = SttService()
         self._llm = LlmService()
         self._tts = TtsService()
-        self._fallback_handler = FallbackHandler()
+        self._fallback_handler = FallbackHandler(self._tts)
 
         self._tools = ToolRegistry()
         self._memory = MemoryStore()
@@ -52,16 +52,16 @@ class AssistantPipeline:
             try:
                 with log_latency(logger, "stt_completed", session_id=session_id):
                     text = self._stt.transcribe(audio_bytes)
-            except:
+            except Exception as e:
                 # error logged by log_latency error handling
-                return self._fallback_handler.handle("stt", e), session_id
+                return self._fallback_handler.handle("stt", e, session_id), session_id
     
             # Give to LLM for a reply
             try:
                 result = self.run_llm(text, session_id)
-            except:
+            except Exception as e:
                 # Again log_latency logs error on llm call
-                return self._fallback_handler.handle("llm", e), session_id
+                return self._fallback_handler.handle("llm", e, session_id), session_id
         
             reply = result.text
             resolved_id = result.session_id
@@ -73,7 +73,7 @@ class AssistantPipeline:
                     stream_response = self._tts.stream_synthesize(reply)
             except Exception as e:
                 # log_latency logs error
-                return self._fallback_handler.handle("stt", e), resolved_id
+                return self._fallback_handler.handle("tts", e, resolved_id), resolved_id
             
             return stream_response, resolved_id
 

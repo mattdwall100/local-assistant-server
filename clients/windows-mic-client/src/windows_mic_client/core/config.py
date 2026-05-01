@@ -15,6 +15,7 @@ class ClientSettings(BaseSettings):
     mic_block_size: int = Field(default=1024, alias="MIC_BLOCK_SIZE")
     playback_sample_rate: int = Field(default=22050, alias="PLAYBACK_SAMPLE_RATE")
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
+    fallback_path: str = Field(default="assets/fallback_audio", alias="FALLBACK_PATH")
 
 
     # We configure the settings model to read from a .env file, and to ignore any extra fields that are not defined in the model. This allows us to have a flexible configuration setup, where we can easily add new settings without having to worry about validation errors for unknown fields.
