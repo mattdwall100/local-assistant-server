@@ -5,6 +5,7 @@ import sounddevice as sd
 import numpy as np
 from typing import Iterable
 from fastapi.responses import StreamingResponse
+from pathlib import Path
 
 import threading
 from ..core.logging import get_logger
@@ -17,6 +18,7 @@ class AudioPlayer:
         self.sample_rate = sample_rate
         self.channels = channels
         self.stop_flag = threading.Event()
+        self._playing = False
 
         self.current_stream = None
 
@@ -30,7 +32,22 @@ class AudioPlayer:
         sd.wait()
         logger.info("playback_finished | status=completed")
 
-    def play_wav_stream(self, response: StreamingResponse) -> None:
+    def play_file(self, output_path: str) -> None:
+        output_path = Path(output_path)
+
+        # If already playing audio, skip the fallback response and move on
+        if self._playing:
+            logger.log("fallback_failed | Couldnt play as audio was playing")
+        else:
+            # read fallback audio bytes
+            with open(output_path, 'rb') as f:
+                audio_bytes = f.read()
+
+            # turn to generator and wrap for play_wav_stream use (interruptable)
+            audio_stream = self.bytes_to_stream(audio_bytes)
+            self.play_wav_stream(audio_stream)
+
+    def play_wav_stream(self, response: StreamingResponse | Iterable[bytes]) -> None:
         self.stop_flag.clear()
 
         # chunk generator
@@ -38,7 +55,10 @@ class AudioPlayer:
         block_frames = int(self.sample_rate * block_seconds)
         block_bytes = block_frames * 2  # int16 mono: 2 bytes per frame
 
-        chunk_iterator = response.iter_content(chunk_size=block_bytes)
+        try:
+            chunk_iterator = response.iter_content(chunk_size=block_bytes)
+        except:
+            chunk_iterator = response
 
         def _play_callback():
             self.current_stream = sd.OutputStream(
@@ -67,10 +87,16 @@ class AudioPlayer:
                         self.current_stream.abort()
                         self.current_stream.close()
                 finally:
+                    self._playing = False
                     self.current_stream = None
                     logger.info("playback_finished | status=completed")
-
-        threading.Thread(target=_play_callback, daemon=True).start()
+        if not self._playing:
+            self._playing = True
+            threading.Thread(target=_play_callback, daemon=True).start()
     
     def stop_playback(self):
         self.stop_flag.set()
+
+    def bytes_to_stream(self, audio_bytes: bytes, chunk_size: int = 4096):
+        for i in range(0, len(audio_bytes), chunk_size):
+            yield audio_bytes[i:i + chunk_size]

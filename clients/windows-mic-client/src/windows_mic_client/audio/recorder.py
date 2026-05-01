@@ -100,8 +100,10 @@ class PushToTalkController:
             # Process the recorded audio data
             if not audio_bytes:
                 logger.warning("recording_stopped | reason=no_audio_found")
+                self.orchestrator.handle("bad_audio")
             elif len(audio_bytes)< 1025:
                 logger.warning("recording_stopped | reason=audio_too_short")
+                self.orchestrator.handle("bad_audio")
             else:
                 logger.info(f"recording_stopped | bytes_recorded={len(audio_bytes)}")
                 self.handle_audio(audio_bytes)

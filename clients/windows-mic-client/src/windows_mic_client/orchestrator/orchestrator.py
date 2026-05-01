@@ -3,13 +3,15 @@ from ..audio.player import AudioPlayer
 from typing import Any
 from ..core.logging import get_logger
 from ..utils.latency_logger import log_latency
+from .fallback import ClientFallbackHandler
 
 logger = get_logger(__name__)
 
 class ClientOrchestrator:
-    def __init__(self, api: AssistantAPIClient, player: AudioPlayer) -> None:
+    def __init__(self, api: AssistantAPIClient, player: AudioPlayer, fallback_handler: ClientFallbackHandler) -> None:
         self.api = api
         self.player = player
+        self.fallback_handler = fallback_handler
 
         self.__session_id = None
 
@@ -39,7 +41,7 @@ class ClientOrchestrator:
     def stop_speech(self):
         self.player.stop_playback()
 
-    def health(self) -> dict[str, Any]:
+    def health_check(self) -> dict[str, Any]:
         response_json = self.api.health()
         logger.info(f"health_response | response={response_json}")
     
@@ -67,3 +69,6 @@ class ClientOrchestrator:
                 logger.info(f"playback_started | session_id={resolved_session_id}")
                 self.player.play_wav_stream(iter_response)
             self.session_id = resolved_session_id
+
+    def handle(self, event_name: str) -> None:
+        self.fallback_handler.handle(event_name)

@@ -5,7 +5,10 @@ from .core.config import get_client_settings
 from .audio.recorder import MicrophoneRecorder, PushToTalkController
 from .audio.player import AudioPlayer
 from .orchestrator.orchestrator import ClientOrchestrator
+from .orchestrator.fallback import ClientFallbackHandler
+from .core.logging import get_logger
 
+logger = get_logger(__name__)
 
 def run() -> None:
     settings = get_client_settings()
@@ -16,14 +19,26 @@ def run() -> None:
         timeout_seconds=settings.assistant_api_timeout_seconds
     )
     player = AudioPlayer()
+    
+    # Initialise fallback handler, which utilises the player
+    handler = ClientFallbackHandler(player)
 
     # Initialise Orchestration layer
     orchestrator = ClientOrchestrator(
         api=api,
-        player=player
+        player=player,
+        fallback_handler=handler
     )
-    orchestrator.synthesize("Alfred Awake")
 
+    # server health check
+    try:
+        orchestrator.health_check()
+        orchestrator.synthesize("Alfred Awake.")
+    except Exception as e:
+        logger.warning(f"Health | Server not found: {e}")
+        orchestrator.handle("server_not_found")
+    
+    
     # Initialise input/control layer
     mic_controller = PushToTalkController(
         MicrophoneRecorder(
