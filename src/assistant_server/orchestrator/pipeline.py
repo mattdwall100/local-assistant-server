@@ -12,6 +12,8 @@ from assistant_server.utils.latency_logger import log_latency
 from .fallback import FallbackHandler
 from .state import SessionState
 
+from typing import Generator, Any
+
 logger = get_logger(__name__)
 
 # Currently handling engine, state, contracts all at once.
@@ -161,3 +163,11 @@ class AssistantPipeline:
         session_state.response = response
 
         return session_state
+    
+    def transcribe(self, audio_bytes: bytes) -> str:
+        return self._stt.transcribe(audio_bytes)
+
+    def stream_synthesize(self, text: str) -> Generator[Any, Any, Any]:
+        yield from self._tts.stream_synthesize(text)
+
+    

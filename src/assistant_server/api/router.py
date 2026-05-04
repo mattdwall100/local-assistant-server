@@ -13,8 +13,6 @@ from .schemas import ChatRequest, ChatResponse, HealthResponse
 api_router = APIRouter()
 pipeline = AssistantPipeline()
 
-tts_service = TtsService()
-stt_service = SttService()
 logger = get_logger(__name__)
 
 
@@ -27,7 +25,7 @@ def health() -> HealthResponse:
 def chat(payload: ChatRequest) -> ChatResponse:
     logger.info(f"request_received | endpoint=/chat session_id={payload.session_id}")
     with log_latency(logger, "request_completed", endpoint="/chat", session_id=payload.session_id):
-        result = pipeline.run(payload.text, payload.session_id)
+        result = pipeline.run_llm(payload.text, payload.session_id)
         return ChatResponse(text=result.text, session_id=result.session_id)
 
 
@@ -41,7 +39,7 @@ async def transcribe(
         audio_stream = io.BytesIO(audio_bytes)
         audio_stream.seek(0)
 
-        text = stt_service.transcribe(audio_stream)
+        text = pipeline.transcribe(audio_stream)
         return ChatResponse(text=text, session_id=session_id)
 
 
@@ -53,7 +51,7 @@ def synthesize(payload: ChatRequest) -> StreamingResponse:
         logger, "request_completed", endpoint="/synthesize", session_id=payload.session_id
     ):
         return StreamingResponse(
-            tts_service.stream_synthesize(payload.text),
+            pipeline.stream_synthesize(payload.text),
             media_type="application/octet-stream",
             headers={"X-Session-ID": ""},
         )
@@ -73,6 +71,7 @@ async def speak(
         # Send to pipeline
         stream_response, resolved_id = pipeline.run(audio_bytes, session_id)
 
+        # NOTE May not be necessary anymore
         # if has .fallback_text, is a AudioStream object, send as is
         if hasattr(stream_response, "fallback_text"):
             return stream_response

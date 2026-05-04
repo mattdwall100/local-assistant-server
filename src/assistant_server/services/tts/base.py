@@ -14,5 +14,4 @@ class TtsService:
         self.voice.synthesize_file(text, output_path)
 
     def stream_synthesize(self, text: str) -> Generator[Any, Any, Any]:
-        for chunk in self.voice.stream_synthesize(text):
-            yield chunk
+        yield from self.voice.stream_synthesize(text)
