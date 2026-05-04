@@ -1,14 +1,18 @@
-from ..client.assistant_api_client import AssistantAPIClient
-from ..audio.player import AudioPlayer
 from typing import Any
+
+from ..audio.player import AudioPlayer
+from ..client.assistant_api_client import AssistantAPIClient
 from ..core.logging import get_logger
 from ..utils.latency_logger import log_latency
 from .fallback import ClientFallbackHandler
 
 logger = get_logger(__name__)
 
+
 class ClientOrchestrator:
-    def __init__(self, api: AssistantAPIClient, player: AudioPlayer, fallback_handler: ClientFallbackHandler) -> None:
+    def __init__(
+        self, api: AssistantAPIClient, player: AudioPlayer, fallback_handler: ClientFallbackHandler
+    ) -> None:
         self.api = api
         self.player = player
         self.fallback_handler = fallback_handler
@@ -19,7 +23,7 @@ class ClientOrchestrator:
     @property
     def session_id(self) -> str | None:
         return self.__session_id
-    
+
     @session_id.setter
     def session_id(self, value: str) -> None:
         if not isinstance(value, str):
@@ -32,7 +36,7 @@ class ClientOrchestrator:
         else:
             # Either id is currently None or new value is same as current
             self.__session_id = value
-    
+
     @session_id.deleter
     def session_id(self) -> None:
         self.__session_id = None
@@ -44,7 +48,7 @@ class ClientOrchestrator:
     def health_check(self) -> dict[str, Any]:
         response_json = self.api.health()
         logger.info(f"health_response | response={response_json}")
-    
+
     def speak(self, audio_bytes: bytes):
         logger.info(f"interaction_started | session_id={self.session_id}")
         with log_latency(logger, "interaction_completed", session_id=self.session_id):

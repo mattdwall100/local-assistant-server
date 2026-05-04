@@ -3,22 +3,23 @@
 
 from .implementations.time import getDate, getTime
 from .registry import Registry
+from typing import Callable
 
 
 class ToolRegistry:
     """Placeholder tool registry for future function/tool calling."""
+
     _registry: dict[str, object] = Registry.get()
 
-
-    _tools: dict[str, callable] = {
-        'getTime': getTime,
-        'getDate': getDate,
+    _tools: dict[str, Callable] = {
+        "getTime": getTime,
+        "getDate": getDate,
     }
 
-    def toolRegistry(self) -> list[callable]:
-        #print(self._registry)
-        #return self._registry
+    def toolRegistry(self) -> list[Callable]:
+        # print(self._registry)
+        # return self._registry
         return list(self._tools.values())
 
-    def toolDict(self) -> list[dict[str, callable]]:
+    def toolDict(self) -> list[dict[str, Callable]]:
         return self._tools

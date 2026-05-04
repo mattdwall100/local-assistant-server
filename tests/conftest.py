@@ -1,6 +1,6 @@
 ## `conftest.py`
 
-""" Pytest shared fixtures and configuration.
+"""Pytest shared fixtures and configuration.
 
 Typical contents:
 
@@ -8,4 +8,4 @@ Typical contents:
 - mock settings
 - reusable fake orchestrator fixture
 
-This is a key test setup file. """
+This is a key test setup file."""

@@ -1,7 +1,9 @@
-from ...core.config import get_settings
 from faster_whisper import WhisperModel
 
+from ...core.config import get_settings
+
 settings = get_settings()
+
 
 class FasterWhisperSTT:
     """Client for the Faster Whisper speech-to-text model."""

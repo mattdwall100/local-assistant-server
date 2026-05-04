@@ -8,7 +8,7 @@ class LlmService:
     """LLM service abstraction."""
 
     def __init__(self):
-        self.client = OllamaClient() ## In the future this can be changed if needed
+        self.client = OllamaClient()  ## In the future this can be changed if needed
 
     def complete(
         self,
