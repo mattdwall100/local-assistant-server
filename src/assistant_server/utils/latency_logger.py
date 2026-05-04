@@ -1,15 +1,14 @@
 import time
+from collections.abc import Generator
 from contextlib import contextmanager
 from logging import Logger
-from typing import Any, Generator
+from typing import Any
 
 
 @contextmanager
-def log_latency(logger: Logger, 
-                event_name: str, 
-                level: str = "info",
-                **kwargs: Any
-                ) -> Generator[Any, Any, Any]:
+def log_latency(
+    logger: Logger, event_name: str, level: str = "info", **kwargs: Any
+) -> Generator[Any, Any, Any]:
     # Custom context manager for starting and stopping timer and thn logging result
     # __enter__ code
     start_time = time.perf_counter()

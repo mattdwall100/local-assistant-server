@@ -1,9 +1,10 @@
 """Interface and base classes for tools."""
 # This will allow orchestrator to work with the toolset without needing to know implementation details, and also allow tools to be modular and independently developed.
 
+from collections.abc import Callable
+
 from .implementations.time import getDate, getTime
 from .registry import Registry
-from typing import Callable
 
 
 class ToolRegistry:

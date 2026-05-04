@@ -1,4 +1,6 @@
-from typing import Generator, Any
+from collections.abc import Generator
+from typing import Any
+
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -24,22 +26,21 @@ class ChatResponse(BaseModel):
 
 # For sending audio streams as output of Piper
 class AudioStream:
-    def __init__(self, 
-                 generator: Generator[Any, Any, Any], 
-                 sample_rate: int = 16000, 
-                 fallback_text: str | None = None
-                 ) -> None:
+    def __init__(
+        self,
+        generator: Generator[Any, Any, Any],
+        sample_rate: int = 16000,
+        fallback_text: str | None = None,
+    ) -> None:
         self.generator = generator
         self.sample_rate = sample_rate
         self.fallback_text = fallback_text
 
 
 class FallbackStream(StreamingResponse):
-    def __init__(self, 
-                 generator: Generator[Any, Any, Any], 
-                 fallback_text: str, 
-                 session_id: str
-                 ) -> None:
+    def __init__(
+        self, generator: Generator[Any, Any, Any], fallback_text: str, session_id: str
+    ) -> None:
         super().__init__(
             generator,
             media_type="application/octet-stream",

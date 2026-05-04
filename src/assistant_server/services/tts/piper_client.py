@@ -1,10 +1,11 @@
 import wave
+from collections.abc import Generator
 from pathlib import Path
+from typing import Any
 
 from piper import PiperVoice, SynthesisConfig
 
 from assistant_server.core.config import get_settings
-from typing import Generator, Any
 
 # Default paths
 settings = get_settings()
