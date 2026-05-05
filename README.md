@@ -3,6 +3,7 @@
 Milestone 1 baseline repository for a local-network AI assistant.
 
 This repo is structured to support long-term growth:
+
 - Always-on Linux server (`FastAPI` + orchestration + inference services)
 - Lightweight clients (Windows mic client first, Raspberry Pi client later)
 - Placeholder modules for tools, memory, and RAG
@@ -10,29 +11,162 @@ This repo is structured to support long-term growth:
 
 ## Repository Structure
 
-```text
-.
-|-- assets/                      # Diagrams, docs assets, prompt assets
-|-- clients/                     # Lightweight client implementations
-|   |-- raspberry-pi-client/
-|   `-- windows-mic-client/
-|-- deployment/                  # Deployment assets (systemd, container files later)
-|   `-- systemd/
-|-- scripts/                     # Local helper scripts
-|-- src/
-|   `-- assistant_server/
-|       |-- api/                 # HTTP layer + request/response schemas
-|       |-- core/                # Configuration and app-wide primitives
-|       |-- memory/              # Conversation/session memory placeholder
-|       |-- orchestrator/        # STT -> LLM/tool loop -> TTS coordination
-|       |-- rag/                 # Retrieval placeholder
-|       |-- services/            # STT/LLM/TTS abstractions
-|       `-- tools/               # Tool registration/execution placeholder
-|-- tests/
-|-- .env.example
-|-- pyproject.toml
-|-- requirements.txt
-`-- requirements-dev.txt
+```
+local-assistant-server/
+├─ src/
+│  └─ assistant_server/
+│     ├─ __init__.py
+│     ├─ main.py
+│     ├─ dependencies.py
+│     ├─ api/
+│     │  ├─ __init__.py
+│     │  ├─ dependencies.py
+│     │  ├─ router.py
+│     │  └─ schemas.py
+│     ├─ core/
+│     │  ├─ __init__.py
+│     │  ├─ config.py
+│     │  └─ logging.py
+│     ├─ memory/
+│     │  ├─ __init__.py
+│     │  └─ store.py
+│     ├─ orchestrator/
+│     │  ├─ __init__.py
+│     │  ├─ fallback.py
+│     │  ├─ pipeline.py
+│     │  └─ state.py
+│     ├─ rag/
+│     │  ├─ __init__.py
+│     │  └─ retriever.py
+│     ├─ services/
+│     │  ├─ __init__.py
+│     │  ├─ audio.py
+│     │  ├─ llm/
+│     │  │  ├─ __init__.py
+│     │  │  ├─ base.py
+│     │  │  └─ ollama_client.py
+│     │  ├─ stt/
+│     │  │  ├─ __init__.py
+│     │  │  ├─ base.py
+│     │  │  └─ fasterWhisper_client.py
+│     │  └─ tts/
+│     │     ├─ __init__.py
+│     │     ├─ base.py
+│     │     └─ piper_client.py
+│     ├─ tools/
+│     │  ├─ __init__.py
+│     │  ├─ base.py
+│     │  ├─ registry.py
+│     │  └─ implementations/
+│     │     └─ time.py
+│     └─ utils/
+│        ├─ __init__.py
+│        └─ latency_logger.py
+├─ clients/
+│  ├─ README.md
+│  ├─ raspberry-pi-client/
+│  │  └─ README.md
+│  └─ windows-mic-client/
+│     ├─ README.md
+│     ├─ requirements.txt
+│     ├─ assets/
+│     │  └─ fallback_audio/
+│     │     ├─ bad_audio.wav
+│     │     ├─ fallback_recieved.wav
+│     │     └─ server_not_found.wav
+│     ├─ src/
+│     │  └─ windows_mic_client/
+│     │     ├─ __init__.py
+│     │     ├─ main.py
+│     │     ├─ audio/
+│     │     │  ├─ audio_utils.py
+│     │     │  ├─ player.py
+│     │     │  └─ recorder.py
+│     │     ├─ client/
+│     │     │  ├─ __init__.py
+│     │     │  └─ assistant_api_client.py
+│     │     ├─ core/
+│     │     │  ├─ config.py
+│     │     │  └─ logging.py
+│     │     ├─ orchestrator/
+│     │     │  ├─ __init__.py
+│     │     │  ├─ fallback.py
+│     │     │  └─ orchestrator.py
+│     │     └─ utils/
+│     │        └─ latency_logger.py
+│     └─ tests/
+│        ├─ test_config.py
+│        └─ audio_files/
+│           ├─ mic_20260427_223838.wav
+│           ├─ mic_20260427_223912.wav
+│           └─ mic_20260427_224230.wav
+├─ service-manager/
+│  ├─ README.md
+│  ├─ pyproject.toml
+│  ├─ config/
+│  │  └─ services.yaml
+│  ├─ deployment/
+│  │  └─ systemd/
+│  │     └─ server-manager.service
+│  ├─ src/
+│  │  └─ server_manager/
+│  │     ├─ __init__.py
+│  │     ├─ api.py
+│  │     ├─ config.py
+│  │     ├─ main.py
+│  │     ├─ models.py
+│  │     ├─ monitor.py
+│  │     ├─ runtime.py
+│  │     └─ state.py
+│  └─ tests/
+│     └─ test_health.py
+├─ tests/
+│  ├─ __init__.py
+│  ├─ conftest.py
+│  ├─ mocks.py
+│  ├─ test_health.py
+│  ├─ Unit/
+│  │  ├─ test_fallback.py
+│  │  ├─ test_memory.py
+│  │  ├─ test_pipeline.py
+│  │  └─ test_tools.py
+│  └─ Integration/
+│     ├─ test_api.py
+│     ├─ test_fallback_flow.py
+│     └─ test_streaming.py
+├─ assets/
+│  ├─ README.md
+│  ├─ PROJECT_CONTEXT.md
+│  ├─ architecture.md
+│  └─ fallback_audio/
+│     ├─ llm.wav
+│     ├─ stt.wav
+│     └─ tts.wav
+├─ models/
+│  ├─ llm/
+│  │  ├─ alfred_modelfile_granite
+│  │  └─ alfred_modelfile_qwen
+│  └─ tts/
+│     ├─ en_GB-alan-medium.onnx
+│     └─ en_GB-alan-medium.onnx.json
+├─ deployment/
+│  ├─ README.md
+│  └─ systemd/
+│     └─ local-assistant.service
+├─ scripts/
+│  ├─ README.md
+│  ├─ bootstrap.ps1
+│  ├─ run_client.ps1
+│  └─ run_server.ps1
+├─ .env
+├─ .env.example
+├─ .gitignore
+├─ LICENSE
+├─ pyproject.toml
+├─ README.md
+├─ requirements.txt
+└─ requirements-dev.txt
+
 ```
 
 ## Start The App (Windows PowerShell)
@@ -40,56 +174,10 @@ This repo is structured to support long-term growth:
 This project currently works with Python `3.11` to `3.13`.
 It does not support Python `3.14` yet.
 
-1. Check your Python version:
+Within a venv at root (local-assistant-server)
 
-```powershell
-python --version
-```
-
-2. Create a virtual environment:
-
-```powershell
-python -m venv .venv
-```
-
-3. Activate it:
-
-```powershell
-.\.venv\Scripts\Activate.ps1
-```
-
-4. Install dependencies:
-
-```powershell
-python -m pip install --upgrade pip
-python -m pip install -r requirements-dev.txt
-```
-
-5. Create a local `.env` file:
-
-```powershell
-Copy-Item .env.example .env
-```
-
-6. Start the API from the repo root:
-
-```powershell
-python -m uvicorn assistant_server.main:app --app-dir src --host 127.0.0.1 --port 8000 --reload
-```
-
-7. In a second PowerShell window, test the server:
-
-```powershell
-Invoke-RestMethod http://127.0.0.1:8000/health
-```
-
-Expected response:
-
-```json
-{
-  "status": "ok"
-}
-```
+run scripts/start_server.ps1 for server
+and scripts/start_client.ps1 for client
 
 ## If Startup Fails
 
@@ -117,6 +205,7 @@ python -m pip install -r requirements-dev.txt
 ## Next Milestone Preview
 
 Milestone 2 should add:
+
 - Real API request handling for audio bytes
 - Initial stubbed STT/LLM/TTS flow behind orchestrator interface
 - Better request logging and error mapping

@@ -2,7 +2,7 @@ from assistant_server.orchestrator.fallback import FallbackHandler
 from assistant_server.tools.base import ToolRegistry
 from assistant_server.memory.store import MemoryStore
 from assistant_server.rag.retriever import Retriever
-from collections.abc import Callable, Generator, Any
+from collections.abc import Callable, Generator
 from ollama import ChatResponse, Message
 
 

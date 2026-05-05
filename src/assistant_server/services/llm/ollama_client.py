@@ -10,7 +10,7 @@ logger = get_logger(__name__)
 
 class OllamaClient:
     def __init__(self):
-        self.model_name = settings.model_name
+        self.model_name = settings.modelname
 
     def complete(self, messages: list[dict[str, str]], tool_list: list[Callable]) -> ChatResponse:
         response = ollama.chat(self.model_name, messages=messages, tools=tool_list)
