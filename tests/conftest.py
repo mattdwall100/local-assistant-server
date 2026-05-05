@@ -7,5 +7,6 @@ from .mocks import create_mock_services
 
 @pytest.fixture
 def client():
-    app = create_app(services_factory=create_mock_services)
+    app = create_app(service_factory=create_mock_services)
     return TestClient(app)
+
