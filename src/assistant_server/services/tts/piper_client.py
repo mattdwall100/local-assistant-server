@@ -5,7 +5,7 @@ from typing import Any
 
 from piper import PiperVoice, SynthesisConfig
 
-from assistant_server.core.config import get_settings
+from ...core.config import get_settings
 
 # Default paths
 settings = get_settings()

@@ -55,6 +55,7 @@ class AudioPlayer:
         block_frames = int(self.sample_rate * block_seconds)
         block_bytes = block_frames * 2  # int16 mono: 2 bytes per frame
 
+        # NOTE Can probably get rid of now, since have FallbackAudioStream object
         try:
             chunk_iterator = response.iter_content(chunk_size=block_bytes)
         except:

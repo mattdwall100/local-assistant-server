@@ -1,1 +1,10 @@
-python -m uvicorn assistant_server.main:app --app-dir src --host 127.0.0.1 --port 8000 --reload
+$repoRoot = Split-Path -Parent $PSScriptRoot
+$env:PYTHONPATH = Join-Path $repoRoot "src"
+
+Push-Location $repoRoot
+try {
+    python -m assistant_server.main
+}
+finally {
+    Pop-Location
+}

@@ -1,11 +1,11 @@
-## `conftest.py`
+import pytest
+from fastapi.testclient import TestClient
 
-"""Pytest shared fixtures and configuration.
+from assistant_server.main import create_app
+from .mocks import create_mock_services
 
-Typical contents:
 
-- FastAPI test client fixture
-- mock settings
-- reusable fake orchestrator fixture
-
-This is a key test setup file."""
+@pytest.fixture
+def client():
+    app = create_app(services_factory=create_mock_services)
+    return TestClient(app)

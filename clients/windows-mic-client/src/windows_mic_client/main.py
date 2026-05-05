@@ -8,6 +8,9 @@ from .core.logging import get_logger
 from .orchestrator.fallback import ClientFallbackHandler
 from .orchestrator.orchestrator import ClientOrchestrator
 
+import os
+import time
+
 logger = get_logger(__name__)
 
 
@@ -34,6 +37,10 @@ def run() -> None:
     except Exception as e:
         logger.warning(f"Health | Server not found: {e}")
         orchestrator.handle("server_not_found")
+
+        # NOTE check if valid exit strategy
+        time.sleep(5)
+        os._exit(1)
 
     # Initialise input/control layer
     mic_controller = PushToTalkController(

@@ -7,8 +7,8 @@ from .piper_client import PiperTTS
 class TtsService:
     """Text-to-speech service abstraction."""
 
-    def __init__(self) -> None:
-        self.voice = PiperTTS()
+    def __init__(self, tts_client) -> None:
+        self.voice = tts_client
 
     def synthesize_file(self, text: str, output_path: str) -> None:
         self.voice.synthesize_file(text, output_path)

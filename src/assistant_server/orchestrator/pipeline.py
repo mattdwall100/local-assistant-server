@@ -1,18 +1,22 @@
+from collections.abc import Generator
 from dataclasses import dataclass
+from typing import Any
 
-from assistant_server.core.logging import get_logger
-from assistant_server.memory.store import MemoryStore
-from assistant_server.rag.retriever import Retriever
-from assistant_server.services.llm.base import LlmService
-from assistant_server.services.stt.base import SttService
-from assistant_server.services.tts.base import TtsService
-from assistant_server.tools.base import ToolRegistry
-from assistant_server.utils.latency_logger import log_latency
+from ..core.logging import get_logger
+from ..memory.store import MemoryStore
+from ..rag.retriever import Retriever
+from ..services.llm.base import LlmService
+from ..services.stt.base import SttService
+from ..services.tts.base import TtsService
+from ..tools.base import ToolRegistry
+from ..utils.latency_logger import log_latency
 
 from .fallback import FallbackHandler
 from .state import SessionState
 
-from typing import Generator, Any
+from ..services.llm.ollama_client import OllamaClient
+from ..services.stt.fasterWhisper_client import FasterWhisperSTT
+from ..services.tts.piper_client import PiperTTS
 
 logger = get_logger(__name__)
 
@@ -27,15 +31,25 @@ class PipelineResult:
 
 
 class AssistantPipeline:
-    def __init__(self) -> None:
-        self._stt = SttService()
-        self._llm = LlmService()
-        self._tts = TtsService()
-        self._fallback_handler = FallbackHandler(self._tts)
+    def __init__(
+        self,
+        stt: FasterWhisperSTT,
+        llm: OllamaClient,
+        tts: PiperTTS,
+        fallback_handler: FallbackHandler,
+        tools: ToolRegistry,
+        memory: MemoryStore,
+        retriever: Retriever,
+    ) -> None:
+        
+        self._stt = SttService(stt)
+        self._llm = LlmService(llm)
+        self._tts = TtsService(tts)
 
-        self._tools = ToolRegistry()
-        self._memory = MemoryStore()
-        self._retriever = Retriever()
+        self._fallback_handler = fallback_handler
+        self._tools = tools
+        self._memory = memory
+        self._retriever = retriever
 
     def run(self, audio_bytes: bytes, session_id: str | None) -> tuple[bytes, str]:
         """Runs the full STT -> (LLM + tools) -> TTS Pipeline
@@ -163,11 +177,9 @@ class AssistantPipeline:
         session_state.response = response
 
         return session_state
-    
+
     def transcribe(self, audio_bytes: bytes) -> str:
         return self._stt.transcribe(audio_bytes)
 
     def stream_synthesize(self, text: str) -> Generator[Any, Any, Any]:
         yield from self._tts.stream_synthesize(text)
-
-    
