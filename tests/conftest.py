@@ -2,11 +2,21 @@ import pytest
 from fastapi.testclient import TestClient
 
 from assistant_server.main import create_app
+
 from .mocks import create_mock_services
+
+# So that when app() is called, it uses the mock services instead of real ones.
+@pytest.fixture
+def mock_services():    
+    return create_mock_services()
 
 
 @pytest.fixture
-def client():
-    app = create_app(service_factory=create_mock_services)
-    return TestClient(app)
+def app(mock_services):
+    return create_app(service_factory=lambda: mock_services)
 
+
+@pytest.fixture
+def client(app):
+    with TestClient(app) as test_client:
+        yield test_client
