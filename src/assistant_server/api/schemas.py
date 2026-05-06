@@ -3,10 +3,16 @@ from typing import Any
 
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
+from datetime import datetime
 
 
 class HealthResponse(BaseModel):
     status: str = "ok"
+
+
+class ActivityResponse(BaseModel):
+    last_activity_time: str
+    status_code: int = 200
 
 
 class readyResponse(BaseModel):

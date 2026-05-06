@@ -1,5 +1,6 @@
 from assistant_server.orchestrator.pipeline import AssistantPipeline
 from tests.mocks import create_mock_services
+from unittest.mock import patch
 
 
 def test_run_llm_returns_response_and_updates_memory() -> None:
@@ -35,3 +36,16 @@ def test_run_pipeline_returns_audio_stream() -> None:
     assert len(chunks) == 3
     assert all(isinstance(chunk, bytes) for chunk in chunks)
     assert all(chunk for chunk in chunks)
+
+
+def test_run_llm_updates_activity() -> None:
+    # Arrange
+    services = create_mock_services()
+    orchestrator = AssistantPipeline(**services)
+
+    with patch.object(orchestrator, "update_activity") as update:
+        # Act
+        orchestrator.run_llm("hello")
+
+        # Assert
+        update.assert_called_once()

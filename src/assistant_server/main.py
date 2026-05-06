@@ -10,7 +10,9 @@ import uvicorn
 from collections.abc import Callable
 
 
-def create_app(service_factory: Callable = create_services, ) -> FastAPI:
+def create_app(
+    service_factory: Callable = create_services,
+) -> FastAPI:
     services = service_factory()
     orchestrator = AssistantPipeline(**services)
 
@@ -25,7 +27,7 @@ if __name__ == "__main__":
     get_logger(__name__).info("Starting assistant server...")
 
     settings = get_settings()
-    #app = create_app(settings)
+    # app = create_app(settings)
 
     uvicorn.run(
         "assistant_server.main:create_app",

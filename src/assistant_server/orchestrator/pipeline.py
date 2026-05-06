@@ -18,6 +18,8 @@ from ..services.llm.ollama_client import OllamaClient
 from ..services.stt.fasterWhisper_client import FasterWhisperSTT
 from ..services.tts.piper_client import PiperTTS
 
+from datetime import datetime
+
 logger = get_logger(__name__)
 
 # Currently handling engine, state, contracts all at once.
@@ -41,7 +43,6 @@ class AssistantPipeline:
         memory: MemoryStore,
         retriever: Retriever,
     ) -> None:
-        
         self._stt = SttService(stt)
         self._llm = LlmService(llm)
         self._tts = TtsService(tts)
@@ -51,15 +52,17 @@ class AssistantPipeline:
         self._memory = memory
         self._retriever = retriever
 
+        self._activity = datetime.now()
+
     def run(self, audio_bytes: bytes, session_id: str | None) -> tuple[bytes, str]:
         """Runs the full STT -> (LLM + tools) -> TTS Pipeline
 
-        Note:
          - "with log_latency" is a context manager to track and log event latency
          - "self.fallback_handler.handle(event_name, e)" attempts to return a graceful degredation
         of AudioStream's containing fallback audio, with fallback text in header"""
 
         logger.info(f"pipeline_started | session_id={session_id}")
+        self.update_activity()  # Update activity to now
 
         with log_latency(logger, "pipeline_completed", session_id=session_id):
             # Give to STT
@@ -124,6 +127,7 @@ class AssistantPipeline:
             session_id=session_state.session_id, messages=session_state.messages
         )
 
+        self.update_activity()  # Update last active status to now
         return PipelineResult(
             text=session_state.response.message.content, session_id=resolved_session
         )
@@ -183,3 +187,11 @@ class AssistantPipeline:
 
     def stream_synthesize(self, text: str) -> Generator[Any, Any, Any]:
         yield from self._tts.stream_synthesize(text)
+
+    def update_activity(self) -> None:
+        """Updates latest activity time to now, called upon request and return of pipeline calls"""
+        self._activity = datetime.now()
+
+    def get_activity(self) -> str:
+        """Returns latest activity time. Used for external lifecycle management of assistant server app instance"""
+        return str(self._activity)

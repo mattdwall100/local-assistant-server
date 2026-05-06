@@ -1,0 +1,55 @@
+from .orchestrator import Orchestrator
+import asyncio
+from .logging import get_logger
+
+
+logger = get_logger(__name__)
+
+
+class Monitor:
+    def __init__(
+        self,
+        orchestrator: Orchestrator,
+        timeout_interval: int = 30,
+        check_pending_interval: int = 2,
+    ) -> None:
+        self.orchestrator = orchestrator
+        self.timeout_interval = timeout_interval
+        self.check_pending_interval = check_pending_interval
+
+        self.start()
+
+    def start(self):
+        # Async background loops
+        # start up via threads
+        pass
+
+
+    async def _timeout_loop(self):
+        # every interval, ask orchestrator what needs to be checked for idleness,
+
+        while True:
+            on_services = self.orchestrator.get_name_by_status(["on"])
+            for name in on_services:
+                seconds_until_sleep = self.orchestrator.get_seconds_until_sleep(name)
+                if seconds_until_sleep is not None and seconds_until_sleep < 0:
+                    # If we are potentially past idle time, we need to check and (if idle) terminate
+                    logger.info(f"Checking for idle | name={name}")
+                    self.orchestrator.stop_if_idle(name)
+
+            await asyncio.sleep(self.timeout_interval)
+
+
+    async def _check_pending_loop(self):
+        # every interval, ask orchestrator for services that are starting or stopping, and check their status
+
+        while True:
+            pending_service_names = self.orchestrator.get_name_by_status(
+                ["starting", "stopping"]
+            )
+            for name in pending_service_names:
+                new_status = await self.orchestrator.update_status(name)
+                if new_status in ["on", "off"]:
+                    logger.info(f"Pending Ended | service={name}, status={new_status}")
+
+            await asyncio.sleep(self.check_pending_interval)

@@ -21,19 +21,14 @@ class MockLlmClient:
         del messages
         del tool_list
 
-        return ChatResponse(
-            message=Message(
-                role="assistant", 
-                content="mock response message"
-                )
-        )
+        return ChatResponse(message=Message(role="assistant", content="mock response message"))
 
-        
+
 class MockTtsClient:
     def synthesize_file(self, text: str, output_path: str = None) -> None:
         del text
         del output_path
-        pass # do nothing, just simulate the interface
+        pass  # do nothing, just simulate the interface
 
     def stream_synthesize(self, text: str) -> Generator[bytes, None, None]:
         # simulate chunked audio (like Piper)
@@ -62,5 +57,5 @@ def create_mock_services():
         "fallback_handler": fallback_handler,
         "tools": tools,
         "memory": memory,
-        "retriever": retriever
+        "retriever": retriever,
     }

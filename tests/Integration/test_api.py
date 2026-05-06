@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi.testclient import TestClient
 
 from assistant_server.main import create_app
@@ -14,6 +16,19 @@ def test_health_endpoint_returns_ok() -> None:
     # Assert
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
+
+
+def test_activity_endpoint_returns_timestamp() -> None:
+    # Arrange
+    client = TestClient(create_app(service_factory=create_mock_services))
+
+    # Act
+    response = client.get("/activity")
+
+    # Assert
+    assert response.status_code == 200
+    assert "last_activity_time" in response.json()
+    assert isinstance(response.json()["last_activity_time"], str)
 
 
 def test_chat_endpoint_returns_response_shape() -> None:

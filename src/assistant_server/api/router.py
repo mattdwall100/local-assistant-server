@@ -8,7 +8,7 @@ from ..api.dependencies import get_orchestrator
 from ..core.logging import get_logger
 from ..orchestrator.pipeline import AssistantPipeline
 from ..utils.latency_logger import log_latency
-from .schemas import ChatRequest, ChatResponse, HealthResponse
+from .schemas import ChatRequest, ChatResponse, HealthResponse, ActivityResponse
 
 
 api_router = APIRouter()
@@ -29,6 +29,15 @@ def chat(
     with log_latency(logger, "request_completed", endpoint="/chat", session_id=payload.session_id):
         result = orchestrator.run_llm(payload.text, payload.session_id)
         return ChatResponse(text=result.text, session_id=result.session_id)
+
+
+@api_router.get("/activity", response_model=ActivityResponse)
+def activity(orchestrator: AssistantPipeline = Depends(get_orchestrator)) -> ActivityResponse:
+    logger.info(f"request_received | endpoint=/activity")
+    return ActivityResponse(
+        last_activity_time=orchestrator.get_activity(),
+        status_code=200,
+    )
 
 
 @api_router.post("/transcribe", response_model=ChatResponse)
@@ -92,3 +101,8 @@ async def speak(
                 "X-Session-ID": resolved_id or "",
             },
         )
+
+
+from fastapi.responses import Response
+
+Response()

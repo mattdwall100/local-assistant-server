@@ -4,6 +4,7 @@
 from .ollama_client import OllamaClient
 from collections.abc import Callable
 
+
 class LlmService:
     """LLM service abstraction."""
 

@@ -1,10 +1,11 @@
 from .services.llm.ollama_client import OllamaClient
-from .services.stt.fasterWhisper_client import FasterWhisperSTT 
+from .services.stt.fasterWhisper_client import FasterWhisperSTT
 from .services.tts.piper_client import PiperTTS
 from .orchestrator.fallback import FallbackHandler
 from .tools.base import ToolRegistry
 from .memory.store import MemoryStore
 from .rag.retriever import Retriever
+
 
 def create_services():
     stt_service = FasterWhisperSTT()
@@ -23,6 +24,5 @@ def create_services():
         "fallback_handler": fallback_handler,
         "tools": tools,
         "memory": memory,
-        "retriever": retriever
+        "retriever": retriever,
     }
-
