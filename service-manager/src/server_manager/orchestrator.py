@@ -67,7 +67,7 @@ class Orchestrator:
         logger.info(f"stop_if_idle | {name} no longer idle")    
 
 
-    # Published StatusManager Methods ----------
+    # Published StatusManager Methods -------------------
     def get_status(self, name: str) -> Literal["on", "off", "starting", "stopping"]:
         # We publish this method to other modules that have access to orchestrator
         return self.status_manager.get_status(name)
@@ -79,3 +79,7 @@ class Orchestrator:
         self, status_list: list[Literal["on", "off", "starting", "stopping"]]
     ) -> list[str]:
         return self.status_manager(status_list)
+    
+    # Published ServiceConfigRegistryMethods ------------
+    def list_services(self) -> list[str]:
+        return self.config_registry.list_services()

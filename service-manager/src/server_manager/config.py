@@ -21,6 +21,7 @@ from .schemas import ServiceConfig, ServiceNotFoundError
 
 
 class Settings(BaseSettings):
+    app_name: str = "Server_Manager"
     api_host: str = Field(default="0.0.0.0", alias="SERVER_MANAGER_HOST")
     api_port: int = Field(default=9000, alias="SERVER_MANAGER_PORT")
     app_env: Literal["dev", "test", "prod"] = Field(default="dev", alias="SERVER_MANAGER_ENV")
@@ -49,7 +50,6 @@ class ServiceConfigRegistry:
     def _from_yaml(cls, config_path: str) -> "ServiceConfigRegistry":
         """Constructor method to create a ServiceConfigRegistry instance from a YAML file."""
         path = Path(config_path)
-
         with path.open("r", encoding="utf-8") as f:
             raw = yaml.safe_load(f) or {}
         raw_services = raw.get("services", {})
