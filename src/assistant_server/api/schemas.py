@@ -8,6 +8,7 @@ from datetime import datetime
 
 class HealthResponse(BaseModel):
     status: str = "ok"
+    status_code: int = 200
 
 
 class ActivityResponse(BaseModel):
