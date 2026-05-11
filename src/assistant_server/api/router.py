@@ -1,6 +1,6 @@
 import io
 
-from fastapi import APIRouter, File, Form, UploadFile
+from fastapi import APIRouter, File, Form, UploadFile, HTTPException
 from fastapi.responses import StreamingResponse
 from fastapi import Depends
 
@@ -34,10 +34,14 @@ def chat(
 @api_router.get("/activity", response_model=ActivityResponse)
 def activity(orchestrator: AssistantPipeline = Depends(get_orchestrator)) -> ActivityResponse:
     logger.info(f"request_received | endpoint=/activity")
-    return ActivityResponse(
-        last_activity_time=orchestrator.get_activity(),
-        status_code=200,
-    )
+    try:
+        return ActivityResponse(
+            last_activity_time=orchestrator.get_activity(),
+            status_code=200,
+        )
+    except Exception as e:
+        logger.error(f"get_service_status | internal server error name={name}, exception={e}")
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @api_router.post("/transcribe", response_model=ChatResponse)
