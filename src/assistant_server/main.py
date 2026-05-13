@@ -1,17 +1,17 @@
+from collections.abc import Callable
+from typing import Any
+import uvicorn
 from fastapi import FastAPI
 
 from .api.router import api_router
 from .core.config import get_settings
 from .core.logging import get_logger
 from .dependencies import create_services
-
 from .orchestrator.pipeline import AssistantPipeline
-import uvicorn
-from collections.abc import Callable
 
 
 def create_app(
-    service_factory: Callable = create_services,
+    service_factory: Callable[[], dict[str, object]] = create_services,
 ) -> FastAPI:
     services = service_factory()
     orchestrator = AssistantPipeline(**services)

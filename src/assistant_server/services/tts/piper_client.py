@@ -19,7 +19,7 @@ class PiperTTS:
         self.output_path = output_path
         self.syn_config = SynthesisConfig(length_scale=0.6)
 
-    def synthesize_file(self, text: str, output_path: str = None) -> None:
+    def synthesize_file(self, text: str, output_path: str = "") -> None:
         """Synthesize the given text and save it to the specified output path."""
         # Default outputpath is set to self.output_path if not provided
         if output_path is not None:

@@ -14,6 +14,7 @@ class SessionState:
         self.__session_id = session_id
         self.__response = response
         self.__messages = messages
+        self.toolFailStatus = False
 
     # Getters and setters for session state
     @property
@@ -47,8 +48,9 @@ class SessionState:
         else:
             self.__messages = new_messages
 
+    # uesless at the moment, will help in future tool loop with contracts and states
     def toolCallFailed(self) -> None:
         logger.warning(
             f"Tool call failed for session {self.session_id}. Current state: {self.__dict__}"
         )
-        self.toolCallFailed = True
+        self.toolFailStatus = True

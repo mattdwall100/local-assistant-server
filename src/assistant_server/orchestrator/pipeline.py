@@ -1,24 +1,23 @@
 from collections.abc import Generator
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any
+from io import BytesIO
 
 from ..core.logging import get_logger
 from ..memory.store import MemoryStore
 from ..rag.retriever import Retriever
 from ..services.llm.base import LlmService
+from ..services.llm.ollama_client import OllamaClient
 from ..services.stt.base import SttService
+from ..services.stt.fasterWhisper_client import FasterWhisperSTT
 from ..services.tts.base import TtsService
+from ..services.tts.piper_client import PiperTTS
 from ..tools.base import ToolRegistry
 from ..utils.latency_logger import log_latency
-
 from .fallback import FallbackHandler
 from .state import SessionState
-
-from ..services.llm.ollama_client import OllamaClient
-from ..services.stt.fasterWhisper_client import FasterWhisperSTT
-from ..services.tts.piper_client import PiperTTS
-
-from datetime import datetime
+from ..api.schemas import FallbackStream
 
 logger = get_logger(__name__)
 
@@ -54,7 +53,7 @@ class AssistantPipeline:
 
         self._activity = datetime.now()
 
-    def run(self, audio_bytes: bytes, session_id: str | None) -> tuple[bytes, str]:
+    def run(self, audio_bytes: BytesIO, session_id: str | None) -> tuple[Generator[bytes, Any, Any] | FallbackStream, str | None]:
         """Runs the full STT -> (LLM + tools) -> TTS Pipeline
 
          - "with log_latency" is a context manager to track and log event latency
@@ -83,8 +82,8 @@ class AssistantPipeline:
             reply = result.text
             resolved_id = result.session_id
 
-            # Give to TTS (Create the audio bytes stream)
-            # This generates the stream object, real TTS latency is measured in chunks by the client or in a deeper wrapper
+            # Give to TTS (Create the audio bytes stream), This generates the stream object,
+            # real TTS latency is measured in chunks by the client or in a deeper wrapper
             try:
                 with log_latency(logger, "tts_stream_initialized", session_id=resolved_id):
                     stream_response = self._tts.stream_synthesize(reply)
@@ -95,7 +94,7 @@ class AssistantPipeline:
             return stream_response, resolved_id
 
     def run_llm(self, text: str, session_id: str | None = None) -> PipelineResult:
-        """Main pipeline method to process user input and return a response, along with an updated session id."""
+        """Main pipeline method: process user input, return response w/ resolved session id."""
 
         # Context Aggregation
         user_prompt = {"role": "user", "content": text}
@@ -116,13 +115,16 @@ class AssistantPipeline:
         # Save response to chat history
         messages.append({"role": "assistant", "content": response.message.content})
 
-        # Initialise session state oobject to pass session information between orchestrator functionalities
+        # Initialise session state object to pass session info b/n orchestrator functionalities
+        # For future use when loop becomes complicated and contracts are involved
         session_state = SessionState(session_id=session_id, response=response, messages=messages)
 
-        # Check for tool calls, if they exist call them and update state accordingly, then update message sequence etc and make new call
+        # Check for tool calls, if they exist call them and update state accordingly,
+        # then update message sequence etc and make new call
         session_state = self.tool_calling(session_state)
 
-        # Update our memory of chat history, and gain a reoslved session id (new if was empty, same if was given)
+        # Update our memory of chat history,
+        # and gain a reoslved session id (new if was empty, same if was given)
         resolved_session = self._memory.update(
             session_id=session_state.session_id, messages=session_state.messages
         )
@@ -133,7 +135,8 @@ class AssistantPipeline:
         )
 
     def tool_calling(self, session_state: SessionState) -> SessionState:
-        """Checks for tool calls in the response, executes them, updates the session state, and makes a new LLM call if needed."""
+        """Checks for tool calls in the response, executes them,
+        updates the session state, and makes a new LLM call if needed."""
 
         response = session_state.response
         messages = session_state.messages
@@ -142,7 +145,8 @@ class AssistantPipeline:
         toolsCalled = False
         if response.message.tool_calls:
             logger.info(
-                f"tool_evaluation_started | session_id={session_id} tool_count={len(response.message.tool_calls)}"
+                f"tool_calling evals started | \
+                    session_id={session_id} tool_count={len(response.message.tool_calls)}"
             )
             for tool in response.message.tool_calls:
                 if function_to_call := self._tools.toolDict().get(tool.function.name):
@@ -182,10 +186,10 @@ class AssistantPipeline:
 
         return session_state
 
-    def transcribe(self, audio_bytes: bytes) -> str:
+    def transcribe(self, audio_bytes: BytesIO) -> str:
         return self._stt.transcribe(audio_bytes)
 
-    def stream_synthesize(self, text: str) -> Generator[Any, Any, Any]:
+    def stream_synthesize(self, text: str) -> Generator[bytes, Any, Any]:
         yield from self._tts.stream_synthesize(text)
 
     def update_activity(self) -> None:
@@ -193,5 +197,5 @@ class AssistantPipeline:
         self._activity = datetime.now()
 
     def get_activity(self) -> str:
-        """Returns latest activity time. Used for external lifecycle management of assistant server app instance"""
+        """Returns latest activity time. Used for external lifecycle management of app instance"""
         return str(self._activity)

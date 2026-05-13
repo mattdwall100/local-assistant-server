@@ -1,9 +1,8 @@
-from importlib import import_module
-
 import pytest
 from fastapi.testclient import TestClient
 
 from assistant_server.main import create_app
+
 from .mocks import create_mock_services
 
 

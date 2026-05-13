@@ -1,6 +1,7 @@
+from unittest.mock import patch
+
 from assistant_server.orchestrator.pipeline import AssistantPipeline
 from tests.mocks import create_mock_services
-from unittest.mock import patch
 
 
 def test_run_llm_returns_response_and_updates_memory() -> None:

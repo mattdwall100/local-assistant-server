@@ -1,7 +1,7 @@
 """Interface and base classes for tools."""
-# This will allow orchestrator to work with the toolset without needing to know implementation details, and also allow tools to be modular and independently developed.
 
 from collections.abc import Callable
+from typing import Any
 
 from .implementations.time import getDate, getTime
 from .registry import Registry
@@ -10,17 +10,18 @@ from .registry import Registry
 class ToolRegistry:
     """Placeholder tool registry for future function/tool calling."""
 
-    _registry: dict[str, object] = Registry.get()
+    # Old style of specifying ollama tools, not currently in use 
+    _registry: list[object] = Registry.get()
 
-    _tools: dict[str, Callable] = {
+    _tools: dict[str, Callable[[Any], str]] = {
         "getTime": getTime,
         "getDate": getDate,
     }
 
-    def toolRegistry(self) -> list[Callable]:
+    def toolRegistry(self) -> list[Callable[[Any], str]]:
         # print(self._registry)
         # return self._registry
         return list(self._tools.values())
 
-    def toolDict(self) -> list[dict[str, Callable]]:
+    def toolDict(self) -> dict[str, Callable[[Any], str]]:
         return self._tools

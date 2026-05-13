@@ -3,7 +3,6 @@ from typing import Any
 
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
-from datetime import datetime
 
 
 class HealthResponse(BaseModel):
@@ -46,7 +45,7 @@ class AudioStream:
 
 class FallbackStream(StreamingResponse):
     def __init__(
-        self, generator: Generator[Any, Any, Any], fallback_text: str, session_id: str
+        self, generator: Generator[Any, Any, Any], fallback_text: str, session_id: str | None
     ) -> None:
         super().__init__(
             generator,

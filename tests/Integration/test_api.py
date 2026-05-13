@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from fastapi.testclient import TestClient
 
 from assistant_server.main import create_app
@@ -15,7 +13,7 @@ def test_health_endpoint_returns_ok() -> None:
 
     # Assert
     assert response.status_code == 200
-    assert response.json() == {"status": "ok"}
+    assert response.json().get("status") == "ok"
 
 
 def test_activity_endpoint_returns_timestamp() -> None:

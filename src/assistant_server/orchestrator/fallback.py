@@ -1,6 +1,6 @@
 from collections.abc import Generator
 from pathlib import Path
-
+from typing import Any
 from ..api.schemas import FallbackStream
 from ..core.config import get_settings
 from ..core.logging import get_logger
@@ -25,8 +25,8 @@ class FallbackHandler:
         }
 
     def handle(
-        self, event_name: str, exception: Exception, session_id: str
-    ) -> Generator | FallbackStream:
+        self, event_name: str, exception: Exception, session_id: str | None
+    ) -> Generator[bytes, Any, Any] | FallbackStream:
         if event_name not in self.fallback_message.keys():
             logger.error(f"unknown event_name | event_name={event_name}")
             raise ValueError("Unknown event name")
@@ -61,6 +61,6 @@ class FallbackHandler:
 
         return FallbackStream(self.bytes_to_stream(b""), "<Failed to gather>", session_id)
 
-    def bytes_to_stream(self, audio_bytes: bytes, chunk_size: int = 4096):
+    def bytes_to_stream(self, audio_bytes: bytes, chunk_size: int = 4096) -> Generator[bytes, Any, Any]:
         for i in range(0, len(audio_bytes), chunk_size):
             yield audio_bytes[i : i + chunk_size]

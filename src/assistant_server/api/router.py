@@ -1,15 +1,13 @@
-import io
+from io import BytesIO
 
-from fastapi import APIRouter, File, Form, UploadFile, HTTPException
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
-from fastapi import Depends
 
 from ..api.dependencies import get_orchestrator
 from ..core.logging import get_logger
 from ..orchestrator.pipeline import AssistantPipeline
 from ..utils.latency_logger import log_latency
-from .schemas import ChatRequest, ChatResponse, HealthResponse, ActivityResponse
-
+from .schemas import ActivityResponse, ChatRequest, ChatResponse, HealthResponse
 
 api_router = APIRouter()
 
@@ -33,14 +31,14 @@ def chat(
 
 @api_router.get("/activity", response_model=ActivityResponse)
 def activity(orchestrator: AssistantPipeline = Depends(get_orchestrator)) -> ActivityResponse:
-    logger.info(f"request_received | endpoint=/activity")
+    logger.info("request_received | endpoint=/activity")
     try:
         return ActivityResponse(
             last_activity_time=orchestrator.get_activity(),
             status_code=200,
         )
     except Exception as e:
-        logger.error(f"get_service_status | internal server error name={name}, exception={e}")
+        logger.error(f"/activity failed | internal server error exception={e}")
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
@@ -53,7 +51,7 @@ async def transcribe(
     logger.info(f"request_received | endpoint=/transcribe session_id={session_id}")
     with log_latency(logger, "request_completed", endpoint="/transcribe", session_id=session_id):
         audio_bytes = await file.read()
-        audio_stream = io.BytesIO(audio_bytes)
+        audio_stream = BytesIO(audio_bytes)
         audio_stream.seek(0)
 
         text = orchestrator.transcribe(audio_stream)
@@ -86,7 +84,7 @@ async def speak(
     with log_latency(logger, "request_completed", endpoint="/speak", session_id=session_id):
         # Recieve raw bytes and format to wrapped BytesIO
         raw_bytes = await file.read()
-        audio_bytes = io.BytesIO(raw_bytes)
+        audio_bytes = BytesIO(raw_bytes)
         audio_bytes.seek(0)
 
         # Send to pipeline
@@ -105,8 +103,3 @@ async def speak(
                 "X-Session-ID": resolved_id or "",
             },
         )
-
-
-from fastapi.responses import Response
-
-Response()
