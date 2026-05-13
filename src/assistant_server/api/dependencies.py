@@ -1,4 +1,5 @@
 from fastapi import Request
+
 from ..orchestrator.pipeline import AssistantPipeline
 
 

@@ -1,13 +1,19 @@
 from collections.abc import Callable
 from typing import Any
-from .ollama_client import OllamaClient
+
 from ollama import ChatResponse
+
+from .ollama_client import OllamaClient
+
 
 class LlmService:
     """LLM service abstraction."""
 
     def __init__(self, llm_client: OllamaClient) -> None:
         self.client = llm_client
+
+    def warmup(self) -> None:
+        self.client.warmup()
 
     def complete(
         self,

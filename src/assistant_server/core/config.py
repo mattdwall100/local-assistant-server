@@ -13,10 +13,11 @@ class Settings(BaseSettings):
     api_host: str = Field(default="0.0.0.0", alias="API_HOST")
     api_port: int = Field(default=8000, alias="API_PORT")
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
+    stt_device: str = Field(default="cpu", alias="STT_DEVICE")
+    stt_FW_model_path: str = Field(default="tiny", alias="STT_FW_MODEL_PATH")
     modelname: str = Field(default="granite4:350m", alias="MODEL_NAME")
     tts_voice_path: str = Field(default="models/tts/en_GB-alan-medium.onnx", alias="TTS_VOICE_PATH")
     tts_output_path: str = Field(default="tests/voice_results/output.wav", alias="TTS_OUTPUT_PATH")
-    faster_whisper_model: str = Field(default="tiny", alias="FASTER_WHISPER_MODEL")
     fallback_path: str = Field(default="assets/fallback_audio", alias="FALLBACK_PATH")
 
     # read .env and ignore extra fields

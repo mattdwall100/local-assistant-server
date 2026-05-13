@@ -1,9 +1,10 @@
 from collections.abc import Generator
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any
 from io import BytesIO
+from typing import Any
 
+from ..api.schemas import FallbackStream
 from ..core.logging import get_logger
 from ..memory.store import MemoryStore
 from ..rag.retriever import Retriever
@@ -17,7 +18,6 @@ from ..tools.base import ToolRegistry
 from ..utils.latency_logger import log_latency
 from .fallback import FallbackHandler
 from .state import SessionState
-from ..api.schemas import FallbackStream
 
 logger = get_logger(__name__)
 
@@ -42,8 +42,11 @@ class AssistantPipeline:
         memory: MemoryStore,
         retriever: Retriever,
     ) -> None:
+        logger.info("AssistantPipeline __init__ starting...")
         self._stt = SttService(stt)
         self._llm = LlmService(llm)
+        with log_latency(logger, "ollama warmup() complete"):
+            self._llm.warmup()
         self._tts = TtsService(tts)
 
         self._fallback_handler = fallback_handler
@@ -53,7 +56,9 @@ class AssistantPipeline:
 
         self._activity = datetime.now()
 
-    def run(self, audio_bytes: BytesIO, session_id: str | None) -> tuple[Generator[bytes, Any, Any] | FallbackStream, str | None]:
+    def run(
+        self, audio_bytes: BytesIO, session_id: str | None
+    ) -> tuple[Generator[bytes, Any, Any] | FallbackStream, str | None]:
         """Runs the full STT -> (LLM + tools) -> TTS Pipeline
 
          - "with log_latency" is a context manager to track and log event latency

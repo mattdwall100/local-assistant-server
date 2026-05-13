@@ -15,6 +15,9 @@ class MockSttClient:
 
 
 class MockLlmClient:
+    def warmup(self) -> None:
+        pass
+
     def complete(
         self,
         messages: list[dict[str, str]],

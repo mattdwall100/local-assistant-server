@@ -1,6 +1,7 @@
 from collections.abc import Generator
 from pathlib import Path
 from typing import Any
+
 from ..api.schemas import FallbackStream
 from ..core.config import get_settings
 from ..core.logging import get_logger
@@ -61,6 +62,8 @@ class FallbackHandler:
 
         return FallbackStream(self.bytes_to_stream(b""), "<Failed to gather>", session_id)
 
-    def bytes_to_stream(self, audio_bytes: bytes, chunk_size: int = 4096) -> Generator[bytes, Any, Any]:
+    def bytes_to_stream(
+        self, audio_bytes: bytes, chunk_size: int = 4096
+    ) -> Generator[bytes, Any, Any]:
         for i in range(0, len(audio_bytes), chunk_size):
             yield audio_bytes[i : i + chunk_size]

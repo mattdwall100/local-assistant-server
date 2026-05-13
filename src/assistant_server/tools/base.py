@@ -10,7 +10,7 @@ from .registry import Registry
 class ToolRegistry:
     """Placeholder tool registry for future function/tool calling."""
 
-    # Old style of specifying ollama tools, not currently in use 
+    # Old style of specifying ollama tools, not currently in use
     _registry: list[object] = Registry.get()
 
     _tools: dict[str, Callable[[Any], str]] = {
