@@ -1,5 +1,4 @@
 $repoRoot = Split-Path -Parent $PSScriptRoot
-echo $PSScriptRoot
 $env:PYTHONPATH = Join-Path $repoRoot "src"
 
 Push-Location $repoRoot
