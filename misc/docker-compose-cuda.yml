@@ -6,7 +6,10 @@ services:
     container_name: assistant-server
     env_file:
       - .env
+    gpus: all
     environment:
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
       OLLAMA_HOST: http://host.docker.internal:11434
       API_HOST: 0.0.0.0
       API_PORT: 8000
