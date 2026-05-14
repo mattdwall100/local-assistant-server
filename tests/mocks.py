@@ -51,8 +51,8 @@ def create_mock_services():
     llm_service = MockLlmClient()
 
     fallback_handler = FallbackHandler(tts_service)
-    tools = ToolRegistry()
     memory = MemoryStore()
+    tools = ToolRegistry()
     retriever = Retriever()
 
     return {

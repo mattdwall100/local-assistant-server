@@ -14,8 +14,8 @@ def create_services() -> dict[str, object]:
     llm_service = OllamaClient()
 
     fallback_handler = FallbackHandler(TtsService(tts_service))
-    tools = ToolRegistry()
     memory = MemoryStore()
+    tools = ToolRegistry()
     retriever = Retriever()
 
     return {

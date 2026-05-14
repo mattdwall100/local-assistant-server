@@ -7,8 +7,8 @@ def test_memory_store_saves_and_loads_messages() -> None:
     messages = [{"role": "user", "content": "hello"}]
 
     # Act
-    session_id = memory.update(None, messages)
-    loaded_messages = memory.load(session_id)
+    session_id = memory.update_chat_history(None, messages)
+    loaded_messages = memory.load_chat_history(session_id)
 
     # Assert
     assert session_id
@@ -20,7 +20,7 @@ def test_memory_store_returns_empty_history_for_missing_session() -> None:
     memory = MemoryStore()
 
     # Act
-    messages = memory.load("missing-session")
+    messages = memory.load_chat_history("missing-session")
 
     # Assert
     assert messages == []

@@ -23,9 +23,10 @@ def health() -> HealthResponse:
 def chat(
     payload: ChatRequest, orchestrator: AssistantPipeline = Depends(get_orchestrator)
 ) -> ChatResponse:
-    logger.info(f"request_received | endpoint=/chat session_id={payload.session_id}")
-    with log_latency(logger, "request_completed", endpoint="/chat", session_id=payload.session_id):
-        result = orchestrator.run_llm(payload.text, payload.session_id)
+    session_id = payload.session_id or ""
+    logger.info(f"request_received | endpoint=/chat session_id={session_id}")
+    with log_latency(logger, "request_completed", endpoint="/chat", session_id=session_id):
+        result = orchestrator.run_llm(payload.text, session_id)
         return ChatResponse(text=result.text, session_id=result.session_id)
 
 
@@ -48,6 +49,8 @@ async def transcribe(
     session_id: str | None = Form(None),
     orchestrator: AssistantPipeline = Depends(get_orchestrator),
 ) -> ChatResponse:
+    session_id = session_id or ""
+
     logger.info(f"request_received | endpoint=/transcribe session_id={session_id}")
     with log_latency(logger, "request_completed", endpoint="/transcribe", session_id=session_id):
         audio_bytes = await file.read()
@@ -63,10 +66,9 @@ def synthesize(
     payload: ChatRequest, orchestrator: AssistantPipeline = Depends(get_orchestrator)
 ) -> StreamingResponse:
     """Send a stream of bytes back to the client, speaking the text sent"""
-    logger.info(f"request_received | endpoint=/synthesize session_id={payload.session_id}")
-    with log_latency(
-        logger, "request_completed", endpoint="/synthesize", session_id=payload.session_id
-    ):
+    session_id = payload.session_id or ""
+    logger.info(f"request_received | endpoint=/synthesize session_id={session_id}")
+    with log_latency(logger, "request_completed", endpoint="/synthesize", session_id=session_id):
         return StreamingResponse(
             orchestrator.stream_synthesize(payload.text),
             media_type="application/octet-stream",
@@ -80,6 +82,7 @@ async def speak(
     session_id: str | None = Form(None),
     orchestrator: AssistantPipeline = Depends(get_orchestrator),
 ) -> StreamingResponse:
+    session_id = session_id or ""
     logger.info(f"request_received | endpoint=/speak session_id={session_id}")
     with log_latency(logger, "request_completed", endpoint="/speak", session_id=session_id):
         # Recieve raw bytes and format to wrapped BytesIO

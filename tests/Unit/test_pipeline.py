@@ -8,6 +8,7 @@ def test_run_llm_returns_response_and_updates_memory() -> None:
     # Arrange
     services = create_mock_services()
     pipeline = AssistantPipeline(**services)
+    memory = services["memory"]
 
     # Act
     result = pipeline.run_llm("hello", session_id=None)
@@ -16,7 +17,7 @@ def test_run_llm_returns_response_and_updates_memory() -> None:
     assert result.text == "mock response message"
     assert result.session_id is not None
 
-    messages = services["memory"].load(result.session_id)
+    messages = services["memory"].load_chat_history(result.session_id)
     assert messages == [
         {"role": "user", "content": "hello"},
         {"role": "assistant", "content": "mock response message"},

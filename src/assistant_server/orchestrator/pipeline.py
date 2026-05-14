@@ -1,8 +1,9 @@
-from collections.abc import Generator
+from collections.abc import Generator, Callable
 from dataclasses import dataclass
 from datetime import datetime
 from io import BytesIO
 from typing import Any
+from inspect import signature
 
 from ..api.schemas import FallbackStream
 from ..core.logging import get_logger
@@ -28,7 +29,7 @@ logger = get_logger(__name__)
 @dataclass(frozen=True)
 class PipelineResult:
     text: str
-    session_id: str | None
+    session_id: str
 
 
 class AssistantPipeline:
@@ -38,8 +39,8 @@ class AssistantPipeline:
         llm: OllamaClient,
         tts: PiperTTS,
         fallback_handler: FallbackHandler,
-        tools: ToolRegistry,
         memory: MemoryStore,
+        tools: ToolRegistry,
         retriever: Retriever,
     ) -> None:
         logger.info("AssistantPipeline __init__ starting...")
@@ -50,15 +51,15 @@ class AssistantPipeline:
         self._tts = TtsService(tts)
 
         self._fallback_handler = fallback_handler
-        self._tools = tools
         self._memory = memory
+        self._tools = tools
         self._retriever = retriever
 
         self._activity = datetime.now()
 
     def run(
-        self, audio_bytes: BytesIO, session_id: str | None
-    ) -> tuple[Generator[bytes, Any, Any] | FallbackStream, str | None]:
+        self, audio_bytes: BytesIO, session_id: str
+    ) -> tuple[Generator[bytes, Any, Any] | FallbackStream, str]:
         """Runs the full STT -> (LLM + tools) -> TTS Pipeline
 
          - "with log_latency" is a context manager to track and log event latency
@@ -66,6 +67,7 @@ class AssistantPipeline:
         of AudioStream's containing fallback audio, with fallback text in header"""
 
         logger.info(f"pipeline_started | session_id={session_id}")
+        session_id = self._memory.resolve_session(session_id)
         self.update_activity()  # Update activity to now
 
         with log_latency(logger, "pipeline_completed", session_id=session_id):
@@ -81,7 +83,8 @@ class AssistantPipeline:
             try:
                 result = self.run_llm(text, session_id)
             except Exception as e:
-                # Again log_latency logs error on llm call
+                # no log_latency to log the error here
+                logger.error(f"run_llm failed | exception={str(e)}")
                 return self._fallback_handler.handle("llm", e, session_id), session_id
 
             reply = result.text
@@ -98,14 +101,15 @@ class AssistantPipeline:
 
             return stream_response, resolved_id
 
-    def run_llm(self, text: str, session_id: str | None = None) -> PipelineResult:
+    def run_llm(self, text: str, session_id: str = "") -> PipelineResult:
         """Main pipeline method: process user input, return response w/ resolved session id."""
+        session_id = self._memory.resolve_session(session_id)
 
         # Context Aggregation
         user_prompt = {"role": "user", "content": text}
-        memory_context = self._memory.load(session_id)
+        memory_context = self._memory.load_chat_history(session_id)
         retrieval_context = self._retriever.retrieve(text)
-        tool_list = self._tools.toolRegistry()
+        tool_list = self._tools.toolList()
 
         memory_context.append(user_prompt)
         messages = memory_context
@@ -130,7 +134,7 @@ class AssistantPipeline:
 
         # Update our memory of chat history,
         # and gain a reoslved session id (new if was empty, same if was given)
-        resolved_session = self._memory.update(
+        resolved_session = self._memory.update_chat_history(
             session_id=session_state.session_id, messages=session_state.messages
         )
 
@@ -163,7 +167,14 @@ class AssistantPipeline:
                         session_id=session_id,
                         tool_name=tool.function.name,
                     ):
-                        tool_response = function_to_call(**tool.function.arguments)
+                        # Inject tool dependencies as necessary
+                        tool_response = self.call_tool_with_injected_dependencies(
+                            function_to_call,
+                            tool.function.arguments,
+                            memory=self._memory,
+                            session_id=session_id
+                        )
+
                         messages.append(
                             {
                                 "role": "tool",
@@ -190,6 +201,22 @@ class AssistantPipeline:
         session_state.response = response
 
         return session_state
+    
+    def call_tool_with_injected_dependencies(
+            self,
+            func: Callable[[Any], str],
+            kwargs: dict[str, str],
+            *, #force label below args
+            memory: MemoryStore,
+            session_id: str
+    ) -> str:
+        # copy dict or dict-like Mapping
+        kwargs_new = dict(kwargs)
+        # add memory/session_id dependencies
+        kwargs_new["memory"] = memory
+        kwargs_new["session_id"] = session_id
+
+        return func(**kwargs_new)
 
     def transcribe(self, audio_bytes: BytesIO) -> str:
         return self._stt.transcribe(audio_bytes)
@@ -199,6 +226,7 @@ class AssistantPipeline:
 
     def update_activity(self) -> None:
         """Updates latest activity time to now, called upon request and return of pipeline calls"""
+        logger.info(f"update_activity suceeded")
         self._activity = datetime.now()
 
     def get_activity(self) -> str:

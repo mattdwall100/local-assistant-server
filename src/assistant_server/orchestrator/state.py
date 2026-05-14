@@ -9,7 +9,7 @@ class SessionState:
     """Class to hold the state of a session, including memory, retriever, and tools."""
 
     def __init__(
-        self, session_id: str | None, response: ChatResponse | None, messages: list[dict[str, str]]
+        self, session_id: str, response: ChatResponse | None, messages: list[dict[str, str]]
     ) -> None:
         self.__session_id = session_id
         self.__response = response
@@ -18,7 +18,7 @@ class SessionState:
 
     # Getters and setters for session state
     @property
-    def session_id(self) -> str | None:
+    def session_id(self) -> str:
         return self.__session_id
 
     # Session id should not be changeable after initialisation

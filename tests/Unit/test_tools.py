@@ -1,31 +1,35 @@
 from assistant_server.tools.base import ToolRegistry
-
+from assistant_server.memory.store import MemoryStore
 
 def test_tool_registry_exposes_default_tools() -> None:
+    session_id = "test_id"
     # Arrange
+    memory = MemoryStore()
     registry = ToolRegistry()
 
     # Act
     tools = registry.toolDict()
-    tool_list = registry.toolRegistry()
+    tool_list = registry.toolList()
 
     # Assert
-    assert "getTime" in tools
-    assert "getDate" in tools
-    assert callable(tools["getTime"])
-    assert callable(tools["getDate"])
-    assert tools["getTime"] in tool_list
-    assert tools["getDate"] in tool_list
+    assert "get_time" in tools
+    assert "get_date" in tools
+    assert callable(tools["get_time"])
+    assert callable(tools["get_date"])
+    assert tools["get_time"] in tool_list
+    assert tools["get_date"] in tool_list
 
 
 def test_registered_tools_execute_successfully() -> None:
+    session_id = "test_id"
     # Arrange
+    memory = MemoryStore()
     registry = ToolRegistry()
     tools = registry.toolDict()
 
     # Act
-    time_value = tools["getTime"]()
-    date_value = tools["getDate"]()
+    time_value = tools["get_time"]()
+    date_value = tools["get_date"]()
 
     # Assert
     assert isinstance(time_value, str)

@@ -5,6 +5,11 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 
+class ChatRequest(BaseModel):
+    text: str = Field(min_length=1, max_length=4000)
+    session_id: str | None = Field(default="", max_length=120)
+    # Note, ideally client sends "" not None
+
 class HealthResponse(BaseModel):
     status: str = "ok"
     status_code: int = 200
@@ -20,14 +25,9 @@ class readyResponse(BaseModel):
     status: str = "ready"
 
 
-class ChatRequest(BaseModel):
-    text: str = Field(min_length=1, max_length=4000)
-    session_id: str | None = Field(default=None, max_length=120)
-
-
 class ChatResponse(BaseModel):
     text: str
-    session_id: str | None = None
+    session_id: str = ""
 
 
 # For sending audio streams as output of Piper
@@ -45,7 +45,7 @@ class AudioStream:
 
 class FallbackStream(StreamingResponse):
     def __init__(
-        self, generator: Generator[Any, Any, Any], fallback_text: str, session_id: str | None
+        self, generator: Generator[Any, Any, Any], fallback_text: str, session_id: str
     ) -> None:
         super().__init__(
             generator,

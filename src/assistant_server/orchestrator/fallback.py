@@ -26,7 +26,7 @@ class FallbackHandler:
         }
 
     def handle(
-        self, event_name: str, exception: Exception, session_id: str | None
+        self, event_name: str, exception: Exception, session_id: str
     ) -> Generator[bytes, Any, Any] | FallbackStream:
         if event_name not in self.fallback_message.keys():
             logger.error(f"unknown event_name | event_name={event_name}")

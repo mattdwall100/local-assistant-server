@@ -13,159 +13,109 @@ This repo is structured to support long-term growth:
 
 ```
 local-assistant-server/
-├─ src/
-│  └─ assistant_server/
-│     ├─ __init__.py
-│     ├─ main.py
-│     ├─ dependencies.py
-│     ├─ api/
-│     │  ├─ __init__.py
-│     │  ├─ dependencies.py
-│     │  ├─ router.py
-│     │  └─ schemas.py
-│     ├─ core/
-│     │  ├─ __init__.py
-│     │  ├─ config.py
-│     │  └─ logging.py
-│     ├─ memory/
-│     │  ├─ __init__.py
-│     │  └─ store.py
-│     ├─ orchestrator/
-│     │  ├─ __init__.py
-│     │  ├─ fallback.py
-│     │  ├─ pipeline.py
-│     │  └─ state.py
-│     ├─ rag/
-│     │  ├─ __init__.py
-│     │  └─ retriever.py
-│     ├─ services/
-│     │  ├─ __init__.py
-│     │  ├─ audio.py
-│     │  ├─ llm/
-│     │  │  ├─ __init__.py
-│     │  │  ├─ base.py
-│     │  │  └─ ollama_client.py
-│     │  ├─ stt/
-│     │  │  ├─ __init__.py
-│     │  │  ├─ base.py
-│     │  │  └─ fasterWhisper_client.py
-│     │  └─ tts/
-│     │     ├─ __init__.py
-│     │     ├─ base.py
-│     │     └─ piper_client.py
-│     ├─ tools/
-│     │  ├─ __init__.py
-│     │  ├─ base.py
-│     │  ├─ registry.py
-│     │  └─ implementations/
-│     │     └─ time.py
-│     └─ utils/
-│        ├─ __init__.py
-│        └─ latency_logger.py
-├─ clients/
-│  ├─ README.md
-│  ├─ raspberry-pi-client/
-│  │  └─ README.md
-│  └─ windows-mic-client/
-│     ├─ README.md
-│     ├─ requirements.txt
-│     ├─ assets/
-│     │  └─ fallback_audio/
-│     │     ├─ bad_audio.wav
-│     │     ├─ fallback_recieved.wav
-│     │     └─ server_not_found.wav
-│     ├─ src/
-│     │  └─ windows_mic_client/
-│     │     ├─ __init__.py
-│     │     ├─ main.py
-│     │     ├─ audio/
-│     │     │  ├─ audio_utils.py
-│     │     │  ├─ player.py
-│     │     │  └─ recorder.py
-│     │     ├─ client/
-│     │     │  ├─ __init__.py
-│     │     │  └─ assistant_api_client.py
-│     │     ├─ core/
-│     │     │  ├─ config.py
-│     │     │  └─ logging.py
-│     │     ├─ orchestrator/
-│     │     │  ├─ __init__.py
-│     │     │  ├─ fallback.py
-│     │     │  └─ orchestrator.py
-│     │     └─ utils/
-│     │        └─ latency_logger.py
-│     └─ tests/
-│        ├─ test_config.py
-│        └─ audio_files/
-│           ├─ mic_20260427_223838.wav
-│           ├─ mic_20260427_223912.wav
-│           └─ mic_20260427_224230.wav
-├─ service-manager/
-│  ├─ README.md
-│  ├─ pyproject.toml
-│  ├─ config/
-│  │  └─ services.yaml
-│  ├─ deployment/
-│  │  └─ systemd/
-│  │     └─ server-manager.service
-│  ├─ src/
-│  │  └─ server_manager/
-│  │     ├─ __init__.py
-│  │     ├─ api.py
-│  │     ├─ config.py
-│  │     ├─ main.py
-│  │     ├─ models.py
-│  │     ├─ monitor.py
-│  │     ├─ runtime.py
-│  │     └─ state.py
-│  └─ tests/
-│     └─ test_health.py
-├─ tests/
-│  ├─ __init__.py
-│  ├─ conftest.py
-│  ├─ mocks.py
-│  ├─ test_health.py
-│  ├─ Unit/
-│  │  ├─ test_fallback.py
-│  │  ├─ test_memory.py
-│  │  ├─ test_pipeline.py
-│  │  └─ test_tools.py
-│  └─ Integration/
-│     ├─ test_api.py
-│     ├─ test_fallback_flow.py
-│     └─ test_streaming.py
-├─ assets/
-│  ├─ README.md
-│  ├─ PROJECT_CONTEXT.md
-│  ├─ architecture.md
-│  └─ fallback_audio/
-│     ├─ llm.wav
-│     ├─ stt.wav
-│     └─ tts.wav
-├─ models/
-│  ├─ llm/
-│  │  ├─ alfred_modelfile_granite
-│  │  └─ alfred_modelfile_qwen
-│  └─ tts/
-│     ├─ en_GB-alan-medium.onnx
-│     └─ en_GB-alan-medium.onnx.json
-├─ deployment/
-│  ├─ README.md
-│  └─ systemd/
-│     └─ local-assistant.service
-├─ scripts/
-│  ├─ README.md
-│  ├─ bootstrap.ps1
-│  ├─ run_client.ps1
-│  └─ run_server.ps1
-├─ .env
-├─ .env.example
-├─ .gitignore
-├─ LICENSE
-├─ pyproject.toml
-├─ README.md
-├─ requirements.txt
-└─ requirements-dev.txt
+├── src/
+│   └── assistant_server/
+│       ├── __init__.py
+│       ├── main.py                  # FastAPI app entrypoint
+│       ├── dependencies.py          # App-level dependency wiring
+│       ├── api/
+│       │   ├── __init__.py
+│       │   ├── dependencies.py      # API dependency providers
+│       │   ├── router.py            # HTTP routes
+│       │   └── schemas.py           # Request/response models
+│       ├── core/
+│       │   ├── __init__.py
+│       │   ├── config.py            # Settings/config
+│       │   └── logging.py           # Logging setup
+│       ├── memory/
+│       │   ├── __init__.py
+│       │   ├── papers.py            # Paper-related memory helpers
+│       │   └── store.py             # Memory store
+│       ├── orchestrator/
+│       │   ├── __init__.py
+│       │   ├── fallback.py          # Fallback flow handling
+│       │   ├── pipeline.py          # Main request pipeline
+│       │   └── state.py             # Orchestration state models
+│       ├── rag/
+│       │   ├── __init__.py
+│       │   └── retriever.py         # Retrieval logic
+│       ├── services/
+│       │   ├── __init__.py
+│       │   ├── audio.py             # Audio utilities/service glue
+│       │   ├── llm/
+│       │   │   ├── __init__.py
+│       │   │   ├── base.py
+│       │   │   └── ollama_client.py
+│       │   ├── stt/
+│       │   │   ├── __init__.py
+│       │   │   ├── base.py
+│       │   │   └── fasterWhisper_client.py
+│       │   └── tts/
+│       │       ├── __init__.py
+│       │       ├── base.py
+│       │       └── piper_client.py
+│       ├── tools/
+│       │   ├── __init__.py
+│       │   ├── base.py
+│       │   ├── registry.py
+│       │   └── implementations/
+│       │       ├── papers.py
+│       │       └── time.py
+│       └── utils/
+│           ├── __init__.py
+│           └── latency_logger.py
+├── tests/
+│   ├── __init__.py
+│   ├── conftest.py
+│   ├── mocks.py
+│   ├── Unit/
+│   │   ├── test_fallback.py
+│   │   ├── test_memory.py
+│   │   ├── test_pipeline.py
+│   │   └── test_tools.py
+│   └── Integration/
+│       ├── test_api.py
+│       ├── test_fallback_flow.py
+│       └── test_streaming.py
+├── models/
+│   ├── llm/
+│   │   ├── alfred_modelfile_granite
+│   │   ├── alfred_modelfile_qwen
+│   │   └── alfred_2_modelfile_granite4
+│   └── tts/
+│       ├── en_GB-alan-medium.onnx
+│       ├── en_GB-alan-medium.onnx.json
+│       ├── en_GB-northern_english_male-medium.onnx
+│       └── en_GB-northern_english_male-medium.onnx.json
+├── assets/
+│   ├── README.md
+│   ├── PROJECT_CONTEXT.md
+│   ├── architecture.md
+│   └── fallback_audio/
+│       ├── llm.wav
+│       ├── stt.wav
+│       └── tts.wav
+├── deployment/
+│   ├── README.md
+│   └── systemd/
+│       └── local-assistant.service
+├── scripts/
+│   ├── README.md
+│   ├── bootstrap.ps1
+│   └── run_server.ps1
+├── misc/
+│   ├── Dockerfile_cuda
+│   └── docker-compose-cuda.yml
+├── docker-compose.yml
+├── Dockerfile
+├── pyproject.toml
+├── requirements.txt
+├── requirements-dev.txt
+├── README.md
+├── LICENSE
+├── .env.example
+├── .env
+└── .gitignore
 
 ```
 
