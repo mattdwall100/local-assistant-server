@@ -1,4 +1,6 @@
 import uuid
+from papers import PapersManager
+from typing import NamedTuple
 
 
 class MemoryStore:
@@ -6,7 +8,15 @@ class MemoryStore:
 
     def __init__(self) -> None:
         # Connects uuids with message histories
-        self._sessions: dict[str, list[dict[str, str]]] = {}
+        # make into a namedtuple
+        SessionMemory = NamedTuple(
+            "SessionMemory", 
+            [
+                ("chat_history", list[dict[str, str]]), 
+                ("papers_manager", PapersManager)
+            ]
+        )
+        self._sessions: dict[str, SessionMemory] = {}
 
     def load(self, session_id: str | None) -> list[dict[str, str]]:
         if session_id is None:
