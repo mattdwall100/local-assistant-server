@@ -17,7 +17,7 @@ class PiperTTS:
     def __init__(self, voice_path: str = VOICE_PATH, output_path: str = OUTPUT_PATH):
         self.voice = PiperVoice.load(voice_path)
         self.output_path = output_path
-        self.syn_config = SynthesisConfig(length_scale=0.6)
+        self.syn_config = SynthesisConfig(length_scale=1)
 
     def synthesize_file(self, text: str, output_path: str = "") -> None:
         """Synthesize the given text and save it to the specified output path."""
