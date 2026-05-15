@@ -1,5 +1,6 @@
 # Local AI Assistant Server
 
+Entirely manually coded **without** AI coding agents
 Python/FastAPI backend for a local-first voice assistant. The server owns the AI-heavy work: speech-to-text, LLM inference, tool execution, session memory, text-to-speech, and streamed audio responses. It is designed to run on a local Linux host or Docker container and serve lightweight microphone clients over the local network.
 
 The companion `mic-client` project provides the edge microphone/speaker client. The client records audio and plays responses; this server performs inference and orchestration.
