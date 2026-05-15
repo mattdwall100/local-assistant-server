@@ -17,14 +17,14 @@ class ToolRegistry:
         self._registry: list[object] = Registry.get()
 
         self._tools: dict[str, Callable[[Any], str]] = {
-            "get_time": get_time,
-            "get_date": get_date,
             "get_papers": get_papers,
-            "list_titles": list_titles,
             "get_summary": get_summary,
-            "get_staged_title": get_staged_title,
             "stage_paper": stage_paper,
             "print_paper": print_paper,
+            "get_time": get_time,
+            "get_date": get_date,
+            "list_titles": list_titles,
+            "get_staged_id": get_staged_id,
         }
 
     def toolList(self) -> list[Callable[[Any], str]]:

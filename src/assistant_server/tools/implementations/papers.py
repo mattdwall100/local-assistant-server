@@ -61,7 +61,7 @@ def get_papers(**kwargs) -> str:
     return " ".join([f"{r+1}: {title}." for r, title in enumerate(recorded_titles)])
 
 
-# Query ----------------------------------------
+# QUERY ------------------------------------------
 
 
 def list_titles(**kwargs) -> str:
@@ -119,29 +119,29 @@ def get_summary(internal_id: int, **kwargs) -> str:
     return summary
 
 
-def get_staged_title(**kwargs) -> str:
+def get_staged_id(**kwargs) -> str:
     """
-    Retrieve the title of the currently staged AI paper.
+    Retrieve the internal id of the currently staged AI paper.
 
     Use this tool when the user asks which paper is staged, selected, prepared,
-    or ready for a later action such as printing.
+    or ready for a later action
 
     Args:
         No arguements
 
     Returns:
-        str: The title of the currently staged paper, or an error message if no paper is staged.
+        str: The ID of the currently staged paper, or an error message if no paper is staged.
     """
     memory = kwargs.get("memory")
     session_id = kwargs.get("session_id")
 
     papers_manager = memory.get_papers_manager(session_id)
     try:
-        staged_title = papers_manager.get_staged_title()
+        staged_id = papers_manager.get_staged_id()
     except AttributeError:
         return "ERROR: No paper is staged"
 
-    return staged_title
+    return staged_id
 
 
 # Act ------------------------------------------
@@ -149,127 +149,13 @@ def get_staged_title(**kwargs) -> str:
 
 def stage_paper(internal_id: int, **kwargs) -> str:
     """
-    Stage a stored AI paper for a later action such as printing.
+    Stage a stored AI paper for a later action.
 
     Use this tool when the user asks to select, stage, prepare, or choose one of
     the fetched papers by its internal ID. The staged paper can then be checked
     or used by later tools.
 
     Args:
-
-        internal_id: The numbered paper ID shown to the user, integer between 1 and 5.
-
-    Returns:
-        str: A success message confirming which paper ID was staged, or an error
-        message if the ID is invalid or no matching paper exists.
-    """
-    memory = kwargs.get("memory")
-    session_id = kwargs.get("session_id")
-
-    papers_manager = memory.get_papers_manager(session_id)
-    try:
-        papers_manager.stage_paper(internal_id)
-    except ValueError:
-        return f"ERROR: Invalid internal_id used, must be between 1 and 5, tried with {internal_id}"
-    except AttributeError:
-        return f"ERROR: Couldnt find the paper for id={internal_id}"
-
-    return f"Successfully staged paper with id={internal_id}"
-
-
-def list_titles(**kwargs) -> str:
-    """
-    List the titles of the currently stored AI papers for this session.
-
-    Use this tool when the user asks to list, repeat, show, or remind them of the
-    currently fetched papers. Papers are returned with their internal IDs so they
-    can later be referenced by other paper tools.
-
-    Args:
-        No arguements
-
-    Returns:
-        str: A numbered list of the currently stored paper titles, or an error message
-        if no papers have been fetched yet.
-    """
-    memory = kwargs.get("memory")
-    session_id = kwargs.get("session_id")
-
-    papers_manager = memory.get_papers_manager(session_id)
-    try:
-        titles = papers_manager.list_titles()
-    except AttributeError:
-        return "ERROR: Need to get papers before listing them"
-
-    return " ".join([f"{r+1}: {title}." for r, title in enumerate(titles)])
-
-
-def get_summary(internal_id: int, **kwargs) -> str:
-    """
-    Retrieve the full summary for one of the stored AI papers.
-
-    Use this tool when the user asks for the summary, details, explanation,
-    or overview of a previously fetched paper by its internal ID.
-
-    Args:
-        internal_id: The numbered paper ID shown to the user, integer between 1 and 5.
-
-    Returns:
-        str: The full paper summary for the requested paper, or an error message
-        if the paper ID is invalid or no matching paper exists.
-    """
-    memory = kwargs.get("memory")
-    session_id = kwargs.get("session_id")
-
-    papers_manager = memory.get_papers_manager(session_id)
-    try:
-        summary = papers_manager.get_summary(internal_id)
-    except ValueError:
-        return f"ERROR: Invalid internal_id used, must be between 1 and 5, tried with {internal_id}"
-    except AttributeError:
-        return f"ERROR: Couldnt find all the paper for id={internal_id}"
-
-    return summary
-
-
-def get_staged_title(**kwargs) -> str:
-    """
-    Retrieve the title of the currently staged AI paper.
-
-    Use this tool when the user asks which paper is staged, selected, prepared,
-    or ready for a later action such as printing.
-
-    Args:
-        No arguements
-
-    Returns:
-        str: The title of the currently staged paper, or an error message if no paper is staged.
-    """
-    memory = kwargs.get("memory")
-    session_id = kwargs.get("session_id")
-
-    papers_manager = memory.get_papers_manager(session_id)
-    try:
-        staged_title = papers_manager.get_staged_title()
-    except AttributeError:
-        return "ERROR: No paper is staged"
-
-    return staged_title
-
-
-# Act ------------------------------------------
-
-
-def stage_paper(internal_id: int, **kwargs) -> str:
-    """
-    Stage a stored AI paper for a later action such as printing.
-
-    Use this tool when the user asks to select, stage, prepare, or choose one of
-    the fetched papers by its internal ID. The staged paper can then be checked
-    or used by later tools.
-
-    Args:
-
         internal_id: The numbered paper ID shown to the user, integer between 1 and 5.
 
     Returns:
@@ -292,7 +178,7 @@ def stage_paper(internal_id: int, **kwargs) -> str:
 
 def print_paper(**kwargs) -> str:
     """
-    Print the currently staged AI paper.
+    Print the currently staged paper. Used to Print off an AI paper
 
     Use this tool when the user asks to print the selected, staged, or prepared
     paper. The paper must already have been staged using the stage paper tool.
@@ -327,7 +213,7 @@ def print_paper(**kwargs) -> str:
             response.raise_for_status()
             pdf_path.write_bytes(response.content)
         except Exception as e:
-            return f"ERROR: Failed to download PDF for '{title}', exc={e}"
+            return f"ERROR: Failed to download PDF for"
 
         command = ["lp", "-c", "-d", printer, str(pdf_path)]
         try:
@@ -339,10 +225,14 @@ def print_paper(**kwargs) -> str:
                 timeout=30,
             )
         except subprocess.CalledProcessError as e:
-            return f"ERROR: Print command failed: {e.stderr or e.stdout}"
+            logger.error(f"print_paper failed | exc={e}")
+            return f"ERROR: Print command failed"
         except FileNotFoundError:
+            logger.error(f"print_paper failed | exc={e}")
             return "ERROR: `lp` command not found. Install CUPS client tools."
         except Exception as e:
-            return f"ERROR: Failed to print paper, exc={e}"
+            logger.error(f"print_paper failed | exc={e}")
+            return f"ERROR: Failed to print paper"
 
-    return f"Successfully sent staged paper to printer: {title}"
+    papers_manager.remove_staged()
+    return f"Successfully sent staged paper to the printer"

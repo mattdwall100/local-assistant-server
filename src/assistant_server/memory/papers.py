@@ -62,12 +62,12 @@ class PapersManager:
         logger.info("get_summary failed | couldnt find the paper")
         raise AttributeError("get_ssummary failed | couldnt find paper")
 
-    def get_staged_title(self) -> str:
+    def get_staged_id(self) -> str:
         if not self._staged:
             logger.info("get_staged_title failed | No paper was staged")
             raise AttributeError("get_staged_title failed | No paper was staged")
 
-        return self._staged.title
+        return str(self._staged.internal_id)
 
     def get_staged_to_print(self) -> Paper:
         if not self._staged:
@@ -90,7 +90,7 @@ class PapersManager:
                 return
 
         logger.info("stage_paper failed | couldnt find paper")
-        raise AttributeError("get_staged_title failed | couldnt find paper")
+        raise AttributeError("stage_paper failed | couldnt find paper")
 
     def remove_staged(self) -> None:
         self._staged = None
