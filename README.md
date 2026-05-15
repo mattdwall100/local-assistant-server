@@ -9,6 +9,7 @@ The companion `mic-client` project provides the edge microphone/speaker client. 
 - FastAPI API with `/health`, `/activity`, `/chat`, `/transcribe`, `/synthesize`, and `/speak`.
 - Full voice pipeline: audio upload -> Faster Whisper STT -> Ollama LLM -> optional tool calls -> Piper TTS audio stream.
 - Local inference focus using Ollama, Faster Whisper, Piper, ONNX voice assets, and configurable CPU/GPU STT device selection.
+- Automated Pytest Unit and Integration suite 85%+ coverage
 - Session-scoped in-memory conversation and paper/tool state.
 - Custom tool registry with time/date tools and Hugging Face daily paper tools.
 - Graceful fallback handling for STT, LLM, and TTS failures using generated or prerecorded fallback audio.
@@ -37,7 +38,7 @@ The companion `mic-client` project provides the edge microphone/speaker client. 
 - Local-first architecture with clear client/server separation.
 - Production-style observability through structured log messages and reusable latency measurement.
 - Fault-tolerant pipeline design with fallback audio/text paths.
-- Test coverage for API contracts, streaming, pipeline behavior, memory, tools, and fallback flows.
+- Automated Unit, Integration test coverage for API contracts, streaming, pipeline behavior, memory, tools, and fallback flows.
 - Deployment-aware design for local network hosting, containerization, and long-running Linux service operation.
 
 ## Repository Structure
