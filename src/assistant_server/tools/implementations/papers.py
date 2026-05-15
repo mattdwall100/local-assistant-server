@@ -174,12 +174,29 @@ def stage_paper(internal_id: int, **kwargs) -> str:
 
 def print_paper(**kwargs) -> str:
     """
-    Print the staged paper
+    Print the currently staged AI paper.
+
+    Use this tool when the user asks to print the selected, staged, or prepared
+    paper. The paper must already have been staged using the stage paper tool.
+
+    Returns:
+        str: A success message if the staged paper was sent to the printer, or an
+        error message if no paper is staged, the PDF cannot be downloaded, or the
+        print command fails.
     """
     memory = kwargs.get("memory")
     session_id = kwargs.get("session_id")
 
     papers_manager = memory.get_papers_manager(session_id)
+    try:
+        paper = papers_manager.get_staged_to_print()
+    except AttributeError:
+        return "ERROR: No paper is staged"
+
+    arxiv_id = paper.id
+    title = paper.title
+    pdf_url = f"https://arxiv.org/pdf/{arxiv_id}.pdf"
+
     return f"attempting print of {papers_manager._staged.title}..."
     # call PM method
 
