@@ -10,7 +10,7 @@ class Paper(BaseModel):
     internal_id: int = Field(ge=1, le=5)
     title: str
     summary: str
-    arxiv_id: str
+    id: str
     organization: str | None
 
 

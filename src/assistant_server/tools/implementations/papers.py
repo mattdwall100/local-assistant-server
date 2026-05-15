@@ -16,7 +16,7 @@ def get_papers(**kwargs) -> str:
 
     Use this tool when the user asks to fetch, refresh, load, or retrieve the latest AI papers.
     The tool stores the papers in session memory with internal IDs so later tools can list,
-    summarize, stage, or print a selected paper.
+    summarize, stage, or print a selected paper. It also returns them so you can tell the user.
 
     Args:
         No arguements
