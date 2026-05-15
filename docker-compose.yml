@@ -6,7 +6,10 @@ services:
     container_name: assistant-server
     env_file:
       - .env
+    volumes:
+      - /run/cups/cups.sock:/run/cups/cups.sock
     environment:
+      CUPS_SERVER: /run/cups/cups.sock
       OLLAMA_HOST: http://host.docker.internal:11434
       API_HOST: 0.0.0.0
       API_PORT: 8000
