@@ -26,8 +26,8 @@ def chat(
     session_id = payload.session_id or ""
     logger.info(f"request_received | endpoint=/chat session_id={session_id}")
     with log_latency(logger, "request_completed", endpoint="/chat", session_id=session_id):
-        result = orchestrator.run_llm(payload.text, session_id)
-        return ChatResponse(text=result.text, session_id=result.session_id)
+        session_state = orchestrator.run_llm(payload.text, session_id)
+        return ChatResponse(text=session_state.response_message, session_id=session_state.session_id)
 
 
 @api_router.get("/activity", response_model=ActivityResponse)

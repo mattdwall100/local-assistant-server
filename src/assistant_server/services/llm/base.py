@@ -1,4 +1,4 @@
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterator
 from typing import Any
 
 from ollama import ChatResponse
@@ -23,15 +23,16 @@ class LlmService:
         messages: list[dict[str, str]],
         retrieval_context: list[str] | None,
         tool_list: list[Callable[[Any], str]] | None,
-    ) -> ChatResponse:
+    ) -> tuple[str, list[object] | None]:
         del retrieval_context
         logger.info(f"complete started | messages={messages}")
+
         return self.client.complete(messages, tool_list)
     
     def stream_complete(
             self,
             messages: list[dict[str,str]],
-    ) -> Iterable[str]:
+    ) -> Iterator[str]:
         """Stream (without tool calls)"""
         logger.info(f"stream_complete started | streaming llm response, messages={messages}")
         yield from self.client.stream_complete(messages)

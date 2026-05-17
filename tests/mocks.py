@@ -22,12 +22,21 @@ class MockLlmClient:
         self,
         messages: list[dict[str, str]],
         tool_list: list[Callable],
-        stream: bool = False
-    ) -> ChatResponse | Iterable[ChatResponse]:
+    ) -> tuple[str, list[object | None]]:
         del messages
         del tool_list
 
-        return ChatResponse(message=Message(role="assistant", content="mock response message"))
+        return "mock response message", None
+    
+    def stream_complete(self, messages: list[dict[str, str]]) -> Iterable[str]:
+        yield "The "
+        yield "cat "
+        yield "jumped,"
+        yield " over"
+        yield " the "
+        yield "wall."
+
+
 
 
 class MockTtsClient:

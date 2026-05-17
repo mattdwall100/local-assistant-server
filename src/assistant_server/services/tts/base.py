@@ -1,4 +1,4 @@
-from collections.abc import Generator
+from collections.abc import Generator, Iterator
 from typing import Any
 
 from .piper_client import PiperTTS
@@ -16,3 +16,11 @@ class TtsService:
 
     def stream_synthesize(self, text: str) -> Generator[Any, Any, Any]:
         yield from self.voice.stream_synthesize(text)
+    
+    def stream_in_stream_out(self, text_chunks: Iterator[str]) -> Iterator[Any]:
+        for text in text_chunks:
+            if not text.strip():
+                continue
+
+            for audio_chunk in self.voice.stream_synthesize(text):
+                yield audio_chunk

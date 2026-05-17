@@ -1,8 +1,9 @@
-from collections.abc import Callable, Generator
+from collections.abc import Callable, Generator, Iterator
 from dataclasses import dataclass
 from datetime import datetime
 from io import BytesIO
 from typing import Any
+import re
 
 from ..api.schemas import FallbackStream
 from ..core.logging import get_logger
@@ -80,27 +81,30 @@ class AssistantPipeline:
 
             # Give to LLM for a reply
             try:
-                result = self.run_llm(text, session_id)
+                session_state = self.run_llm(text, session_id)
             except Exception as e:
                 # no log_latency to log the error here
                 logger.error(f"run_llm failed | exception={str(e)}")
                 return self._fallback_handler.handle("llm", e, session_id), session_id
 
-            reply = result.text
-            resolved_id = result.session_id
+            reply = session_state.response_message
+            resolved_id = session_state.session_id
 
             # Give to TTS (Create the audio bytes stream), This generates the stream object,
             # real TTS latency is measured in chunks by the client or in a deeper wrapper
             try:
                 with log_latency(logger, "tts_stream_initialized", session_id=resolved_id):
-                    stream_response = self._tts.stream_synthesize(reply)
+                    if not session_state.toolsCalledStatus:
+                        stream_response = self._tts.stream_synthesize(reply)
+                    else:
+                        stream_response = self._tts.stream_in_stream_out(reply)
             except Exception as e:
                 # log_latency logs error
                 return self._fallback_handler.handle("tts", e, resolved_id), resolved_id
 
             return stream_response, resolved_id
 
-    def run_llm(self, text: str, session_id: str = "") -> PipelineResult:
+    def run_llm(self, text: str, session_id: str = "") -> SessionState:
         """Main pipeline method: process user input, return response w/ resolved session id."""
         session_id = self._memory.resolve_session(session_id)
 
@@ -118,14 +122,14 @@ class AssistantPipeline:
         with log_latency(
             logger, "llm_inference_completed", session_id=session_id, phase="initial_call"
         ):
-            response = self._llm.complete(messages, retrieval_context, tool_list)
+            response_message, tool_calls = self._llm.complete(messages, retrieval_context, tool_list)
 
         # Save response to chat history
-        messages.append({"role": "assistant", "content": response.message.content})
+        messages.append({"role": "assistant", "content": response_message})
 
         # Initialise session state object to pass session info b/n orchestrator functionalities
         # For future use when loop becomes complicated and contracts are involved
-        session_state = SessionState(session_id=session_id, response=response, messages=messages)
+        session_state = SessionState(session_id=session_id, response_message=response_message, tool_calls=tool_calls, messages=messages)
 
         # Check for tool calls, if they exist call them and update state accordingly,
         # then update message sequence etc and make new call
@@ -133,14 +137,12 @@ class AssistantPipeline:
 
         # Update our memory of chat history,
         # and gain a reoslved session id (new if was empty, same if was given)
-        resolved_session = self._memory.update_chat_history(
+        self._memory.update_chat_history(
             session_id=session_state.session_id, messages=session_state.messages
         )
 
         self.update_activity()  # Update last active status to now
-        return PipelineResult(
-            text=session_state.response.message.content, session_id=resolved_session
-        )
+        return session_state
 
     def tool_calling(self, session_state: SessionState) -> SessionState:
         # This is all Ollama / llm service logic that in the future can be isolated once loop is multi-step 
@@ -148,19 +150,19 @@ class AssistantPipeline:
         """Checks for tool calls in the response, executes them,
         updates the session state, and makes a new LLM call if needed."""
 
-        response = session_state.response
+        response_message = session_state.response_message
+        tool_calls = session_state.tool_calls
         messages = session_state.messages
         session_id = session_state.session_id
 
-        toolsCalled = False
-        if response.message.tool_calls:
+        if tool_calls:
             logger.info(
                 f"tool_calling evals started | \
-                    session_id={session_id} tool_count={len(response.message.tool_calls)}"
+                    session_id={session_id} tool_count={len(tool_calls)}"
             )
-            for tool in response.message.tool_calls:
+            for tool in tool_calls:
                 if function_to_call := self._tools.toolDict().get(tool.function.name):
-                    toolsCalled = True
+                    session_state.toolsCalledStatus = True
 
                     with log_latency(
                         logger,
@@ -188,18 +190,17 @@ class AssistantPipeline:
                         f"tool_not_found | session_id={session_id} tool_name={tool.function.name}"
                     )
 
-            if toolsCalled:
+            if session_state.toolsCalledStatus:
                 with log_latency(
                     logger, "llm_inference_completed", session_id=session_id, phase="post_tool_call"
                 ):
-                    response = self._llm.complete(messages, retrieval_context=None, tool_list=None)
+                    response_message = self.remember_llm_stream(messages, session_id)
 
-                messages.append({"role": "assistant", "content": response.message.content})
-            else:
-                session_state.toolCallFailed()
+                # messages.append({"role": "assistant", "content": response_message})
+
 
         session_state.messages = messages
-        session_state.response = response
+        session_state.response_message = response_message
 
         return session_state
 
@@ -218,6 +219,40 @@ class AssistantPipeline:
         kwargs_new["session_id"] = session_id
 
         return func(**kwargs_new)
+    
+    def remember_llm_stream(self, messages: dict[str, str], session_id: str) -> Iterator[str]:
+        token_stream = self._llm.stream_complete(messages)
+        buffer = ""
+        aggregated_text = []
+
+        sentence_end_pattern = re.compile(r"([.!?]),")
+
+        for chunk in token_stream:
+            text = chunk["message"]["content"] or ""
+            buffer += text
+            aggregated_text.append(text)
+
+            while True:
+                match = sentence_end_pattern.search(buffer)
+                if not match:
+                    break
+
+                end_index = match.end()
+                sentence = buffer[:end_index].strip()
+                buffer = buffer[end_index:]
+
+                if sentence:
+                    yield sentence
+
+        if buffer.strip():
+            yield buffer.strip()
+
+        message = "".join(aggregated_text)
+        messages.append({"role": "assistant", "content": message})
+        self._memory.update_chat_history(session_id, messages)
+
+
+
 
     def transcribe(self, audio_bytes: BytesIO) -> str:
         return self._stt.transcribe(audio_bytes)

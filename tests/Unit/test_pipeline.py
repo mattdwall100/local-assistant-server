@@ -14,7 +14,7 @@ def test_run_llm_returns_response_and_updates_memory() -> None:
     result = pipeline.run_llm("hello", session_id=None)
 
     # Assert
-    assert result.text == "mock response message"
+    assert result.response_message == "mock response message"
     assert result.session_id is not None
 
     messages = services["memory"].load_chat_history(result.session_id)

@@ -1,5 +1,5 @@
 import wave
-from collections.abc import Generator
+from collections.abc import Generator, Iterable, Iterator
 from pathlib import Path
 from typing import Any
 
@@ -32,3 +32,4 @@ class PiperTTS:
         """Example of streaming synthesis, yielding audio chunks as they are generated."""
         for chunk in self.voice.synthesize(text, syn_config=self.syn_config):
             yield chunk.audio_int16_bytes
+
