@@ -8,13 +8,12 @@ class _DailyPaper:
     def __init__(
         self,
         *,
-        arxiv_id: str,
+        id: str,
         title: str | None,
         summary: str | None,
         organization=None,
     ) -> None:
-        self.id = arxiv_id
-        self.arxiv_id = arxiv_id
+        self.id = id
         self.title = title
         self.summary = summary
         self.organization = organization
@@ -33,7 +32,7 @@ class _FakeHfApi:
 def _valid_daily_papers(prefix: str) -> list[_DailyPaper]:
     return [
         _DailyPaper(
-            arxiv_id=f"2401.0000{internal_id}",
+            id=f"2401.0000{internal_id}",
             title=f"{prefix} Paper {internal_id}",
             summary=f"{prefix} Summary {internal_id}",
         )
@@ -45,8 +44,8 @@ def test_papers_tools_fetch_and_query_flow_with_mocked_hf_api() -> None:
     # Arrange
     memory = MemoryStore()
     daily_papers = [
-        _DailyPaper(arxiv_id="missing-summary", title="Missing Summary", summary=None),
-        _DailyPaper(arxiv_id="missing-title", title=None, summary="Missing title"),
+        _DailyPaper(id="missing-summary", title="Missing Summary", summary=None),
+        _DailyPaper(id="missing-title", title=None, summary="Missing title"),
         *_valid_daily_papers("Fetched"),
     ]
 
@@ -57,7 +56,7 @@ def test_papers_tools_fetch_and_query_flow_with_mocked_hf_api() -> None:
     titles = paper_tools.list_titles(memory=memory, session_id="session-1")
     summary = paper_tools.get_summary(3, memory=memory, session_id="session-1")
     stage_result = paper_tools.stage_paper(3, memory=memory, session_id="session-1")
-    staged_title = paper_tools.get_staged_title(memory=memory, session_id="session-1")
+    staged_id = paper_tools.get_staged_id(memory=memory, session_id="session-1")
     print_result = paper_tools.print_paper(memory=memory, session_id="session-1")
 
     # Assert
@@ -69,8 +68,8 @@ def test_papers_tools_fetch_and_query_flow_with_mocked_hf_api() -> None:
     assert titles == expected_titles
     assert summary == "Fetched Summary 3"
     assert stage_result == "Successfully staged paper with id=3"
-    assert staged_title == "Fetched Paper 3"
-    assert print_result == "attempting print of Fetched Paper 3..."
+    assert staged_id == "3"
+    assert print_result == "Successfully sent staged paper 3 to the printer"
 
 
 def test_papers_flow_keeps_fetched_and_staged_papers_session_scoped() -> None:
@@ -87,9 +86,17 @@ def test_papers_flow_keeps_fetched_and_staged_papers_session_scoped() -> None:
     second_stage = paper_tools.stage_paper(4, memory=memory, session_id="second-session")
 
     # Assert
-    assert paper_tools.get_summary(2, memory=memory, session_id="first-session") == "First Summary 2"
-    assert paper_tools.get_summary(2, memory=memory, session_id="second-session") == "Second Summary 2"
+    assert (
+        paper_tools.get_summary(2, memory=memory, session_id="first-session") == "First Summary 2"
+    )
+    assert (
+        paper_tools.get_summary(2, memory=memory, session_id="second-session") == "Second Summary 2"
+    )
     assert first_stage == "Successfully staged paper with id=2"
     assert second_stage == "Successfully staged paper with id=4"
-    assert paper_tools.get_staged_title(memory=memory, session_id="first-session") == "First Paper 2"
-    assert paper_tools.get_staged_title(memory=memory, session_id="second-session") == "Second Paper 4"
+    assert (
+        paper_tools.get_staged_id(memory=memory, session_id="first-session") == "2"
+    )
+    assert (
+        paper_tools.get_staged_id(memory=memory, session_id="second-session") == "4"
+    )

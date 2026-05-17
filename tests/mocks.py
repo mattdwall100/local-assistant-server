@@ -1,4 +1,4 @@
-from collections.abc import Callable, Generator
+from collections.abc import Callable, Generator, Iterable
 
 from ollama import ChatResponse, Message
 
@@ -22,7 +22,8 @@ class MockLlmClient:
         self,
         messages: list[dict[str, str]],
         tool_list: list[Callable],
-    ) -> ChatResponse:
+        stream: bool = False
+    ) -> ChatResponse | Iterable[ChatResponse]:
         del messages
         del tool_list
 

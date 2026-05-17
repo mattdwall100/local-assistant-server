@@ -1,7 +1,6 @@
-from ..core.logging import get_logger
-
 from pydantic import BaseModel, Field
 
+from ..core.logging import get_logger
 
 logger = get_logger(__name__)
 
@@ -49,7 +48,7 @@ class PapersManager:
         return [paper.title for paper in self._papers]
 
     def get_summary(self, internal_id: int) -> str:
-        if not internal_id in [1, 2, 3, 4, 5]:
+        if internal_id not in [1, 2, 3, 4, 5]:
             logger.error(
                 f"get_summary failed | internal_id must be in [1, 2, 3, 4, 5], internal_id={internal_id}"
             )
@@ -78,7 +77,7 @@ class PapersManager:
 
     # ACT METHODS -------------------------------------------------------------------
     def stage_paper(self, internal_id: int) -> None:
-        if not internal_id in [1, 2, 3, 4, 5]:
+        if internal_id not in [1, 2, 3, 4, 5]:
             logger.error(
                 f"stage_paper failed | internal_id must be in [1, 2, 3, 4, 5], internal_id={internal_id}"
             )

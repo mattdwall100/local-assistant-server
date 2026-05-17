@@ -1,5 +1,6 @@
-from assistant_server.tools.base import ToolRegistry
 from assistant_server.memory.store import MemoryStore
+from assistant_server.tools.base import ToolRegistry
+
 
 def test_tool_registry_exposes_default_tools() -> None:
     session_id = "test_id"

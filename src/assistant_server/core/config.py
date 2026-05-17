@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     tts_output_path: str = Field(default="tests/voice_results/output.wav", alias="TTS_OUTPUT_PATH")
     fallback_path: str = Field(default="assets/fallback_audio", alias="FALLBACK_PATH")
     printer_name: str = Field(default=None, alias="PRINTER_NAME")
-    
+
     # read .env and ignore extra fields
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 

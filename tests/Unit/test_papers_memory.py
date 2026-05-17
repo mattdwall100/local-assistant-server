@@ -9,7 +9,7 @@ def _paper_kwargs(internal_id: int, title: str | None = None) -> dict[str, objec
         "internal_id": internal_id,
         "title": title or f"Paper {internal_id}",
         "summary": f"Summary {internal_id}",
-        "arxiv_id": f"2401.0000{internal_id}",
+        "id": f"2401.0000{internal_id}",
         "organization": None,
     }
 
@@ -95,12 +95,12 @@ def test_papers_manager_stages_and_clears_selected_paper() -> None:
     papers.stage_paper(3)
 
     # Assert
-    assert papers.get_staged_title() == "Paper 3"
+    assert papers.get_staged_id() == "3"
     assert papers.get_staged_to_print().summary == "Summary 3"
 
     papers.remove_staged()
     with pytest.raises(AttributeError, match="No paper was staged"):
-        papers.get_staged_title()
+        papers.get_staged_id()
 
 
 def test_papers_manager_rejects_invalid_paper_payload() -> None:

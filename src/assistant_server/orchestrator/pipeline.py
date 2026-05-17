@@ -1,9 +1,8 @@
-from collections.abc import Generator, Callable
+from collections.abc import Callable, Generator
 from dataclasses import dataclass
 from datetime import datetime
 from io import BytesIO
 from typing import Any
-from inspect import signature
 
 from ..api.schemas import FallbackStream
 from ..core.logging import get_logger
@@ -144,6 +143,8 @@ class AssistantPipeline:
         )
 
     def tool_calling(self, session_state: SessionState) -> SessionState:
+        # This is all Ollama / llm service logic that in the future can be isolated once loop is multi-step 
+
         """Checks for tool calls in the response, executes them,
         updates the session state, and makes a new LLM call if needed."""
 
@@ -172,7 +173,7 @@ class AssistantPipeline:
                             function_to_call,
                             tool.function.arguments,
                             memory=self._memory,
-                            session_id=session_id
+                            session_id=session_id,
                         )
 
                         messages.append(
@@ -201,14 +202,14 @@ class AssistantPipeline:
         session_state.response = response
 
         return session_state
-    
+
     def call_tool_with_injected_dependencies(
-            self,
-            func: Callable[[Any], str],
-            kwargs: dict[str, str],
-            *, #force label below args
-            memory: MemoryStore,
-            session_id: str
+        self,
+        func: Callable[[Any], str],
+        kwargs: dict[str, str],
+        *,  # force label below args
+        memory: MemoryStore,
+        session_id: str,
     ) -> str:
         # copy dict or dict-like Mapping
         kwargs_new = dict(kwargs)
@@ -226,7 +227,7 @@ class AssistantPipeline:
 
     def update_activity(self) -> None:
         """Updates latest activity time to now, called upon request and return of pipeline calls"""
-        logger.info(f"update_activity suceeded")
+        logger.info("update_activity suceeded")
         self._activity = datetime.now()
 
     def get_activity(self) -> str:

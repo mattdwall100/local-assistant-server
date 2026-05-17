@@ -10,6 +10,7 @@ class ChatRequest(BaseModel):
     session_id: str | None = Field(default="", max_length=120)
     # Note, ideally client sends "" not None
 
+
 class HealthResponse(BaseModel):
     status: str = "ok"
     status_code: int = 200

@@ -9,7 +9,7 @@ def _save_papers(memory: MemoryStore, session_id: str, count: int = 5) -> None:
             internal_id=internal_id,
             title=f"Paper {internal_id}",
             summary=f"Summary {internal_id}",
-            arxiv_id=f"2401.0000{internal_id}",
+            id=f"2401.0000{internal_id}",
             organization=None,
         )
 
@@ -67,7 +67,7 @@ def test_get_summary_returns_missing_error_for_unloaded_internal_id() -> None:
         internal_id=1,
         title="Only Paper",
         summary="Only Summary",
-        arxiv_id="2401.00001",
+        id="2401.00001",
         organization=None,
     )
 
@@ -88,7 +88,7 @@ def test_stage_paper_sets_staged_paper_for_later_tools() -> None:
 
     # Assert
     assert result == "Successfully staged paper with id=4"
-    assert paper_tools.get_staged_title(memory=memory, session_id="session-1") == "Paper 4"
+    assert paper_tools.get_staged_id(memory=memory, session_id="session-1") == "4"
 
 
 def test_stage_paper_returns_missing_error_when_paper_was_not_loaded() -> None:
@@ -107,7 +107,7 @@ def test_get_staged_title_returns_error_when_nothing_is_staged() -> None:
     memory = MemoryStore()
 
     # Act
-    result = paper_tools.get_staged_title(memory=memory, session_id="session-1")
+    result = paper_tools.get_staged_id(memory=memory, session_id="session-1")
 
     # Assert
     assert result == "ERROR: No paper is staged"

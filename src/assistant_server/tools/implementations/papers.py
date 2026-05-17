@@ -1,13 +1,12 @@
-from ...memory.store import MemoryStore
-from ...core.config import get_settings
-from huggingface_hub import HfApi
-import tempfile
-import requests
 import subprocess
+import tempfile
 from pathlib import Path
 
-from ...core.logging import get_logger
+import requests
+from huggingface_hub import HfApi
 
+from ...core.config import get_settings
+from ...core.logging import get_logger
 
 logger = get_logger(__name__)
 settings = get_settings()
@@ -31,7 +30,7 @@ def get_papers(**kwargs) -> str:
     """
     memory = kwargs.get("memory")
     session_id = kwargs.get("session_id")
-    
+
     papers_manager = memory.get_papers_manager(session_id)
 
     api = HfApi()
@@ -212,8 +211,8 @@ def print_paper(**kwargs) -> str:
             response = requests.get(pdf_url, timeout=30)
             response.raise_for_status()
             pdf_path.write_bytes(response.content)
-        except Exception as e:
-            return f"ERROR: Failed to download PDF for"
+        except Exception:
+            return "ERROR: Failed to download PDF for"
 
         command = ["lp", "-c", "-d", printer, str(pdf_path)]
         try:
@@ -226,13 +225,13 @@ def print_paper(**kwargs) -> str:
             )
         except subprocess.CalledProcessError as e:
             logger.error(f"print_paper failed | exc={e}")
-            return f"ERROR: Print command failed"
-        except FileNotFoundError:
+            return "ERROR: Print command failed"
+        except FileNotFoundError as e:
             logger.error(f"print_paper failed | exc={e}")
             return "ERROR: `lp` command not found. Install CUPS client tools."
         except Exception as e:
             logger.error(f"print_paper failed | exc={e}")
-            return f"ERROR: Failed to print paper"
+            return "ERROR: Failed to print paper"
 
     papers_manager.remove_staged()
-    return f"Successfully sent staged paper to the printer"
+    return f"Successfully sent staged paper {paper.internal_id} to the printer"

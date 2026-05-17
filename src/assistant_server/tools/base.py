@@ -3,8 +3,8 @@
 from collections.abc import Callable
 from typing import Any
 
-from .implementations.time import *
 from .implementations.papers import *
+from .implementations.time import *
 from .registry import Registry
 
 
@@ -12,7 +12,6 @@ class ToolRegistry:
     """Placeholder tool registry for future function/tool calling."""
 
     def __init__(self):
-
         # Old style of specifying ollama tools, not currently in use
         self._registry: list[object] = Registry.get()
 

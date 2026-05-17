@@ -1,10 +1,13 @@
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from typing import Any
 
 from ollama import ChatResponse
 
 from .ollama_client import OllamaClient
 
+from ...core.logging import get_logger
+
+logger = get_logger(__name__)
 
 class LlmService:
     """LLM service abstraction."""
@@ -22,5 +25,14 @@ class LlmService:
         tool_list: list[Callable[[Any], str]] | None,
     ) -> ChatResponse:
         del retrieval_context
-
+        logger.info(f"complete started | messages={messages}")
         return self.client.complete(messages, tool_list)
+    
+    def stream_complete(
+            self,
+            messages: list[dict[str,str]],
+    ) -> Iterable[str]:
+        """Stream (without tool calls)"""
+        logger.info(f"stream_complete started | streaming llm response, messages={messages}")
+        yield from self.client.stream_complete(messages)
+        

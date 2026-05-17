@@ -1,7 +1,9 @@
 import uuid
-from .papers import PapersManager
+
 from pydantic import BaseModel, ConfigDict
+
 from ..core.logging import get_logger
+from .papers import PapersManager
 
 logger = get_logger(__name__)
 
@@ -24,8 +26,7 @@ class MemoryStore:
             f"_new_session | creating SessionMemory for resolved_session={resolved_session}"
         )
         self._sessions[resolved_session] = SessionMemory(
-            chat_history=[], 
-            papers_manager=PapersManager()
+            chat_history=[], papers_manager=PapersManager()
         )
 
     def resolve_session(self, session_id: str) -> str:
