@@ -1,9 +1,9 @@
-from collections.abc import Callable, Generator, Iterator
+import re
+from collections.abc import Callable, Generator, Iterator, Mapping
 from dataclasses import dataclass
 from datetime import datetime
 from io import BytesIO
 from typing import Any
-import re
 
 from ..api.schemas import FallbackStream
 from ..core.logging import get_logger
@@ -59,7 +59,7 @@ class AssistantPipeline:
 
     def run(
         self, audio_bytes: BytesIO, session_id: str
-    ) -> tuple[Generator[bytes, Any, Any] | FallbackStream, str]:
+    ) -> tuple[Iterator[Any] | FallbackStream, str]:
         """Runs the full STT -> (LLM + tools) -> TTS Pipeline
 
          - "with log_latency" is a context manager to track and log event latency
@@ -122,14 +122,21 @@ class AssistantPipeline:
         with log_latency(
             logger, "llm_inference_completed", session_id=session_id, phase="initial_call"
         ):
-            response_message, tool_calls = self._llm.complete(messages, retrieval_context, tool_list)
+            response_message, tool_calls = self._llm.complete(
+                messages, retrieval_context, tool_list
+            )
 
         # Save response to chat history
         messages.append({"role": "assistant", "content": response_message})
 
         # Initialise session state object to pass session info b/n orchestrator functionalities
         # For future use when loop becomes complicated and contracts are involved
-        session_state = SessionState(session_id=session_id, response_message=response_message, tool_calls=tool_calls, messages=messages)
+        session_state = SessionState(
+            session_id=session_id,
+            response_message=response_message,
+            tool_calls=tool_calls,
+            messages=messages,
+        )
 
         # Check for tool calls, if they exist call them and update state accordingly,
         # then update message sequence etc and make new call
@@ -145,7 +152,7 @@ class AssistantPipeline:
         return session_state
 
     def tool_calling(self, session_state: SessionState) -> SessionState:
-        # This is all Ollama / llm service logic that in the future can be isolated once loop is multi-step 
+        # This is all Ollama / llm service logic that can be isolated once loop is multi-step
 
         """Checks for tool calls in the response, executes them,
         updates the session state, and makes a new LLM call if needed."""
@@ -198,7 +205,6 @@ class AssistantPipeline:
 
                 # messages.append({"role": "assistant", "content": response_message})
 
-
         session_state.messages = messages
         session_state.response_message = response_message
 
@@ -207,20 +213,20 @@ class AssistantPipeline:
     def call_tool_with_injected_dependencies(
         self,
         func: Callable[[Any], str],
-        kwargs: dict[str, str],
+        func_kwargs: Mapping[str, Any],
         *,  # force label below args
         memory: MemoryStore,
         session_id: str,
     ) -> str:
         # copy dict or dict-like Mapping
-        kwargs_new = dict(kwargs)
+        kwargs_new = dict(func_kwargs)
         # add memory/session_id dependencies
         kwargs_new["memory"] = memory
         kwargs_new["session_id"] = session_id
 
         return func(**kwargs_new)
-    
-    def remember_llm_stream(self, messages: dict[str, str], session_id: str) -> Iterator[str]:
+
+    def remember_llm_stream(self, messages: list[dict[str, str]], session_id: str) -> Iterator[str]:
         token_stream = self._llm.stream_complete(messages)
         buffer = ""
         aggregated_text = []
@@ -250,9 +256,6 @@ class AssistantPipeline:
         message = "".join(aggregated_text)
         messages.append({"role": "assistant", "content": message})
         self._memory.update_chat_history(session_id, messages)
-
-
-
 
     def transcribe(self, audio_bytes: BytesIO) -> str:
         return self._stt.transcribe(audio_bytes)

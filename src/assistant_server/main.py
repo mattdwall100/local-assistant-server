@@ -6,15 +6,23 @@ from fastapi import FastAPI
 from .api.router import api_router
 from .core.config import get_settings
 from .core.logging import get_logger
-from .dependencies import create_services
+from .dependencies import Services, create_services
 from .orchestrator.pipeline import AssistantPipeline
 
 
 def create_app(
-    service_factory: Callable[[], dict[str, object]] = create_services,
+    service_factory: Callable[[], Services] = create_services,
 ) -> FastAPI:
     services = service_factory()
-    orchestrator = AssistantPipeline(**services)
+    orchestrator = AssistantPipeline(
+        stt=services.stt,
+        llm=services.llm,
+        tts=services.tts,
+        fallback_handler=services.fallback_handler,
+        memory=services.memory,
+        tools=services.tools,
+        retriever=services.retriever,
+    )
 
     app = FastAPI(title=get_settings().app_name)
     app.state.orchestrator = orchestrator

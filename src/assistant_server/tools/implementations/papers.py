@@ -7,6 +7,7 @@ from huggingface_hub import HfApi
 
 from ...core.config import get_settings
 from ...core.logging import get_logger
+from ...memory.store import MemoryStore
 
 logger = get_logger(__name__)
 settings = get_settings()
@@ -14,7 +15,7 @@ settings = get_settings()
 # Fetch ----------------------------------------
 
 
-def get_papers(**kwargs) -> str:
+def get_papers(memory: MemoryStore, session_id: str, **kwargs) -> str:
     """
     Fetch the current trending Hugging Face daily papers and store them for this session.
 
@@ -28,8 +29,8 @@ def get_papers(**kwargs) -> str:
     Returns:
         str: A numbered list of the paper titles that were successfully fetched and stored.
     """
-    memory = kwargs.get("memory")
-    session_id = kwargs.get("session_id")
+    #memory : MemoryStore = kwargs["memory"]
+    #session_id : str = kwargs["session_id"]
 
     papers_manager = memory.get_papers_manager(session_id)
 
@@ -78,8 +79,8 @@ def list_titles(**kwargs) -> str:
         str: A numbered list of the currently stored paper titles, or an error message
         if no papers have been fetched yet.
     """
-    memory = kwargs.get("memory")
-    session_id = kwargs.get("session_id")
+    memory : MemoryStore = kwargs["memory"]
+    session_id : str = kwargs["session_id"]
 
     papers_manager = memory.get_papers_manager(session_id)
     try:
@@ -104,8 +105,8 @@ def get_summary(internal_id: int, **kwargs) -> str:
         str: The full paper summary for the requested paper, or an error message
         if the paper ID is invalid or no matching paper exists.
     """
-    memory = kwargs.get("memory")
-    session_id = kwargs.get("session_id")
+    memory : MemoryStore = kwargs["memory"]
+    session_id : str = kwargs["session_id"]
 
     papers_manager = memory.get_papers_manager(session_id)
     try:
@@ -131,8 +132,8 @@ def get_staged_id(**kwargs) -> str:
     Returns:
         str: The ID of the currently staged paper, or an error message if no paper is staged.
     """
-    memory = kwargs.get("memory")
-    session_id = kwargs.get("session_id")
+    memory : MemoryStore = kwargs["memory"]
+    session_id : str = kwargs["session_id"]
 
     papers_manager = memory.get_papers_manager(session_id)
     try:
@@ -161,8 +162,8 @@ def stage_paper(internal_id: int, **kwargs) -> str:
         str: A success message confirming which paper ID was staged, or an error
         message if the ID is invalid or no matching paper exists.
     """
-    memory = kwargs.get("memory")
-    session_id = kwargs.get("session_id")
+    memory : MemoryStore = kwargs["memory"]
+    session_id : str = kwargs["session_id"]
 
     papers_manager = memory.get_papers_manager(session_id)
     try:
@@ -187,8 +188,8 @@ def print_paper(**kwargs) -> str:
         error message if no paper is staged, the PDF cannot be downloaded, or the
         print command fails.
     """
-    memory = kwargs.get("memory")
-    session_id = kwargs.get("session_id")
+    memory : MemoryStore = kwargs["memory"]
+    session_id : str = kwargs["session_id"]
 
     if not settings.printer_name:
         return "ERROR: No printer is specified"
@@ -201,7 +202,6 @@ def print_paper(**kwargs) -> str:
         return "ERROR: No paper is staged"
 
     arxiv_id = paper.id
-    title = paper.title
     pdf_url = f"https://arxiv.org/pdf/{arxiv_id}"
 
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -216,7 +216,7 @@ def print_paper(**kwargs) -> str:
 
         command = ["lp", "-c", "-d", printer, str(pdf_path)]
         try:
-            result = subprocess.run(
+            subprocess.run(
                 command,
                 check=True,
                 capture_output=True,

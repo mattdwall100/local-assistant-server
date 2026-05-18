@@ -13,7 +13,7 @@ def _raise_failure(*args, **kwargs):
 def test_speak_endpoint_returns_fallback_when_stt_fails() -> None:
     # Arrange
     services = create_mock_services()
-    services["stt"].transcribe = _raise_failure
+    services.stt.transcribe = _raise_failure
     client = TestClient(create_app(service_factory=lambda: services))
 
     # Act
@@ -32,7 +32,7 @@ def test_speak_endpoint_returns_fallback_when_stt_fails() -> None:
 def test_speak_endpoint_returns_fallback_when_llm_fails() -> None:
     # Arrange
     services = create_mock_services()
-    services["llm"].complete = _raise_failure
+    services.llm.complete = _raise_failure
     client = TestClient(create_app(service_factory=lambda: services))
 
     # Act

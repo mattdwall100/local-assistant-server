@@ -27,7 +27,7 @@ class readyResponse(BaseModel):
 
 
 class ChatResponse(BaseModel):
-    text: str
+    text: str | None
     session_id: str = ""
 
 

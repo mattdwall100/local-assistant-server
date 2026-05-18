@@ -1,11 +1,10 @@
 from collections.abc import Callable, Generator, Iterable
 
-from ollama import ChatResponse, Message
-
 from assistant_server.memory.store import MemoryStore
 from assistant_server.orchestrator.fallback import FallbackHandler
 from assistant_server.rag.retriever import Retriever
 from assistant_server.tools.base import ToolRegistry
+from assistant_server.dependencies import Services
 
 
 class MockSttClient:
@@ -27,7 +26,7 @@ class MockLlmClient:
         del tool_list
 
         return "mock response message", None
-    
+
     def stream_complete(self, messages: list[dict[str, str]]) -> Iterable[str]:
         yield "The "
         yield "cat "
@@ -35,8 +34,6 @@ class MockLlmClient:
         yield " over"
         yield " the "
         yield "wall."
-
-
 
 
 class MockTtsClient:
@@ -65,12 +62,13 @@ def create_mock_services():
     tools = ToolRegistry()
     retriever = Retriever()
 
-    return {
-        "stt": stt_service,
-        "llm": llm_service,
-        "tts": tts_service,
-        "fallback_handler": fallback_handler,
-        "tools": tools,
-        "memory": memory,
-        "retriever": retriever,
-    }
+    # mode_construct to avoid type val
+    return Services.model_construct(
+        stt=stt_service,
+        llm=llm_service,
+        tts=tts_service,
+        fallback_handler=fallback_handler,
+        tools=tools,
+        memory=memory,
+        retriever=retriever,
+    )

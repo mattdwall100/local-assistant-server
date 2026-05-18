@@ -1,11 +1,8 @@
-from assistant_server.memory.store import MemoryStore
 from assistant_server.tools.base import ToolRegistry
 
 
 def test_tool_registry_exposes_default_tools() -> None:
-    session_id = "test_id"
     # Arrange
-    memory = MemoryStore()
     registry = ToolRegistry()
 
     # Act
@@ -22,9 +19,7 @@ def test_tool_registry_exposes_default_tools() -> None:
 
 
 def test_registered_tools_execute_successfully() -> None:
-    session_id = "test_id"
     # Arrange
-    memory = MemoryStore()
     registry = ToolRegistry()
     tools = registry.toolDict()
 

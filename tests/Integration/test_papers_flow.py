@@ -29,6 +29,13 @@ class _FakeHfApi:
         return iter(self._papers)
 
 
+class _fake_subprocess:
+    def run(cls, cmd, **kwargs) -> str:
+        del cmd
+        # Successful run raises no errors
+        return None
+
+
 def _valid_daily_papers(prefix: str) -> list[_DailyPaper]:
     return [
         _DailyPaper(
@@ -57,7 +64,8 @@ def test_papers_tools_fetch_and_query_flow_with_mocked_hf_api() -> None:
     summary = paper_tools.get_summary(3, memory=memory, session_id="session-1")
     stage_result = paper_tools.stage_paper(3, memory=memory, session_id="session-1")
     staged_id = paper_tools.get_staged_id(memory=memory, session_id="session-1")
-    print_result = paper_tools.print_paper(memory=memory, session_id="session-1")
+    with patch.object(paper_tools, "subprocess", return_value=_fake_subprocess):
+        print_result = paper_tools.print_paper(memory=memory, session_id="session-1")
 
     # Assert
     expected_titles = (
@@ -94,9 +102,5 @@ def test_papers_flow_keeps_fetched_and_staged_papers_session_scoped() -> None:
     )
     assert first_stage == "Successfully staged paper with id=2"
     assert second_stage == "Successfully staged paper with id=4"
-    assert (
-        paper_tools.get_staged_id(memory=memory, session_id="first-session") == "2"
-    )
-    assert (
-        paper_tools.get_staged_id(memory=memory, session_id="second-session") == "4"
-    )
+    assert paper_tools.get_staged_id(memory=memory, session_id="first-session") == "2"
+    assert paper_tools.get_staged_id(memory=memory, session_id="second-session") == "4"

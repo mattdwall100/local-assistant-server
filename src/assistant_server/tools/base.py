@@ -3,8 +3,17 @@
 from collections.abc import Callable
 from typing import Any
 
-from .implementations.papers import *
-from .implementations.time import *
+from mypy_extensions import KwArg
+
+from .implementations.papers import (
+    get_papers,
+    get_staged_id,
+    get_summary,
+    list_titles,
+    print_paper,
+    stage_paper,
+)
+from .implementations.time import get_date, get_time
 from .registry import Registry
 
 
@@ -15,7 +24,7 @@ class ToolRegistry:
         # Old style of specifying ollama tools, not currently in use
         self._registry: list[object] = Registry.get()
 
-        self._tools: dict[str, Callable[[Any], str]] = {
+        self._tools: dict[str, Callable[[KwArg(Any)], str]] = {
             "get_papers": get_papers,
             "get_summary": get_summary,
             "stage_paper": stage_paper,

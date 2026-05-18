@@ -7,8 +7,8 @@ from tests.mocks import create_mock_services
 def test_run_llm_returns_response_and_updates_memory() -> None:
     # Arrange
     services = create_mock_services()
-    pipeline = AssistantPipeline(**services)
-    memory = services["memory"]
+    pipeline = AssistantPipeline(**services.model_dump())
+    memory = services.memory
 
     # Act
     result = pipeline.run_llm("hello", session_id=None)
@@ -17,7 +17,7 @@ def test_run_llm_returns_response_and_updates_memory() -> None:
     assert result.response_message == "mock response message"
     assert result.session_id is not None
 
-    messages = services["memory"].load_chat_history(result.session_id)
+    messages = memory.load_chat_history(result.session_id)
     assert messages == [
         {"role": "user", "content": "hello"},
         {"role": "assistant", "content": "mock response message"},
@@ -27,7 +27,7 @@ def test_run_llm_returns_response_and_updates_memory() -> None:
 def test_run_pipeline_returns_audio_stream() -> None:
     # Arrange
     services = create_mock_services()
-    pipeline = AssistantPipeline(**services)
+    pipeline = AssistantPipeline(**services.model_dump())
 
     # Act
     stream, session_id = pipeline.run(b"audio bytes", session_id="session-1")
@@ -43,7 +43,7 @@ def test_run_pipeline_returns_audio_stream() -> None:
 def test_run_llm_updates_activity() -> None:
     # Arrange
     services = create_mock_services()
-    orchestrator = AssistantPipeline(**services)
+    orchestrator = AssistantPipeline(**services.model_dump())
 
     with patch.object(orchestrator, "update_activity") as update:
         # Act

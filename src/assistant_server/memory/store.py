@@ -73,7 +73,8 @@ class MemoryStore:
             for key, value in message.items():
                 if not isinstance(key, str) or not isinstance(value, str):
                     raise ValueError(
-                        f"update_chat_history failed | message items must be str's, messages={messages}"
+                        f"update_chat_history failed | \
+                            message items must be str's, messages={messages}"
                     )
 
         try:

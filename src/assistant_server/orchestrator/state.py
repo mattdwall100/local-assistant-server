@@ -1,7 +1,7 @@
-from ollama import ChatResponse
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 
 from ..core.logging import get_logger
+from ..services.llm.ollama_client import ToolCall
 
 logger = get_logger(__name__)
 
@@ -10,11 +10,11 @@ class SessionState:
     """Class to hold the state of a session, including memory, retriever, and tools."""
 
     def __init__(
-        self, 
-        session_id: str, 
+        self,
+        session_id: str,
         response_message: str | Iterator[str] | None,
-        tool_calls: list[object] | None, 
-        messages: list[dict[str, str]]
+        tool_calls: Sequence[ToolCall] | None,
+        messages: list[dict[str, str]],
     ) -> None:
         self._session_id = session_id
         self.response_message = response_message
@@ -40,3 +40,9 @@ class SessionState:
             logger.error(f"Attempted to set messages to non-list of dicts: {new_messages}")
         else:
             self._messages = new_messages
+
+
+
+
+
+

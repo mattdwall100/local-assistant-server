@@ -14,13 +14,12 @@ class TtsService:
     def synthesize_file(self, text: str, output_path: str) -> None:
         self.voice.synthesize_file(text, output_path)
 
-    def stream_synthesize(self, text: str) -> Generator[Any, Any, Any]:
+    def stream_synthesize(self, text: str) -> Iterator[Any]:
         yield from self.voice.stream_synthesize(text)
-    
+
     def stream_in_stream_out(self, text_chunks: Iterator[str]) -> Iterator[Any]:
         for text in text_chunks:
             if not text.strip():
                 continue
 
-            for audio_chunk in self.voice.stream_synthesize(text):
-                yield audio_chunk
+            yield from self.voice.stream_synthesize(text)

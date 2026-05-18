@@ -35,7 +35,7 @@ class PapersManager:
                 error_message += f"{k}={v} ,"
             error_message += f"exception={e}"
             logger.error(error_message)
-            raise ValueError(error_message)
+            raise ValueError(error_message) from e
 
         self._papers.append(paper)
 
@@ -50,7 +50,8 @@ class PapersManager:
     def get_summary(self, internal_id: int) -> str:
         if internal_id not in [1, 2, 3, 4, 5]:
             logger.error(
-                f"get_summary failed | internal_id must be in [1, 2, 3, 4, 5], internal_id={internal_id}"
+                f"get_summary failed | internal_id must be in \
+                    [1, 2, 3, 4, 5], internal_id={internal_id}"
             )
             raise ValueError("internal_id must be in [1, 2, 3, 4, 5]")
 
@@ -79,7 +80,8 @@ class PapersManager:
     def stage_paper(self, internal_id: int) -> None:
         if internal_id not in [1, 2, 3, 4, 5]:
             logger.error(
-                f"stage_paper failed | internal_id must be in [1, 2, 3, 4, 5], internal_id={internal_id}"
+                f"stage_paper failed | internal_id must be in \
+                    [1, 2, 3, 4, 5], internal_id={internal_id}"
             )
             raise ValueError("internal_id must be in [1, 2, 3, 4, 5]")
 
