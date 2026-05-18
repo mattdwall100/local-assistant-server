@@ -1,6 +1,7 @@
 import subprocess
 import tempfile
 from pathlib import Path
+from typing import Any
 
 import requests
 from huggingface_hub import HfApi
@@ -15,9 +16,7 @@ settings = get_settings()
 # Fetch ----------------------------------------
 
 
-def get_papers(
-    memory: MemoryStore | None = None, session_id: str | None = None, **kwargs: object
-) -> str:
+def get_papers(**kwargs: Any) -> str:
     """
     Fetch the current trending Hugging Face daily papers and store them for this session.
 
@@ -31,10 +30,10 @@ def get_papers(
     Returns:
         str: A numbered list of the paper titles that were successfully fetched and stored.
     """
-    if not memory:
-        raise ValueError("print_paper failed | Need memory")
-    if not session_id:
-        raise ValueError("print_paper failed | Need session_id")
+    # Raises an error if not found, we cant specify in args because leaks into the
+    # tool schema and llm attempts to generate
+    memory: MemoryStore = kwargs["memory"]
+    session_id: str = kwargs["session_id"]
 
     papers_manager = memory.get_papers_manager(session_id)
 
@@ -68,9 +67,7 @@ def get_papers(
 # QUERY ------------------------------------------
 
 
-def list_titles(
-    memory: MemoryStore | None = None, session_id: str | None = None, **kwargs: object
-) -> str:
+def list_titles(**kwargs: Any) -> str:
     """
     List the titles of the currently stored AI papers for this session.
 
@@ -85,10 +82,8 @@ def list_titles(
         str: A numbered list of the currently stored paper titles, or an error message
         if no papers have been fetched yet.
     """
-    if not memory:
-        raise ValueError("print_paper failed | Need memory")
-    if not session_id:
-        raise ValueError("print_paper failed | Need session_id")
+    memory: MemoryStore = kwargs["memory"]
+    session_id: str = kwargs["session_id"]
 
     papers_manager = memory.get_papers_manager(session_id)
     try:
@@ -101,9 +96,7 @@ def list_titles(
 
 def get_summary(
     internal_id: int = 0,
-    memory: MemoryStore | None = None,
-    session_id: str | None = None,
-    **kwargs: object,
+    **kwargs: Any,
 ) -> str:
     """
     Retrieve the full summary for one of the stored AI papers.
@@ -118,10 +111,8 @@ def get_summary(
         str: The full paper summary for the requested paper, or an error message
         if the paper ID is invalid or no matching paper exists.
     """
-    if not memory:
-        raise ValueError("print_paper failed | Need memory")
-    if not session_id:
-        raise ValueError("print_paper failed | Need session_id")
+    memory: MemoryStore = kwargs["memory"]
+    session_id: str = kwargs["session_id"]
 
     papers_manager = memory.get_papers_manager(session_id)
     try:
@@ -134,9 +125,7 @@ def get_summary(
     return summary
 
 
-def get_staged_id(
-    memory: MemoryStore | None = None, session_id: str | None = None, **kwargs: object
-) -> str:
+def get_staged_id(**kwargs: Any) -> str:
     """
     Retrieve the internal id of the currently staged AI paper.
 
@@ -149,10 +138,8 @@ def get_staged_id(
     Returns:
         str: The ID of the currently staged paper, or an error message if no paper is staged.
     """
-    if not memory:
-        raise ValueError("print_paper failed | Need memory")
-    if not session_id:
-        raise ValueError("print_paper failed | Need session_id")
+    memory: MemoryStore = kwargs["memory"]
+    session_id: str = kwargs["session_id"]
 
     papers_manager = memory.get_papers_manager(session_id)
     try:
@@ -168,9 +155,7 @@ def get_staged_id(
 
 def stage_paper(
     internal_id: int = 0,
-    memory: MemoryStore | None = None,
-    session_id: str | None = None,
-    **kwargs: object,
+    **kwargs: Any,
 ) -> str:
     """
     Stage a stored AI paper for a later action.
@@ -186,10 +171,8 @@ def stage_paper(
         str: A success message confirming which paper ID was staged, or an error
         message if the ID is invalid or no matching paper exists.
     """
-    if not memory:
-        raise ValueError("print_paper failed | Need memory")
-    if not session_id:
-        raise ValueError("print_paper failed | Need session_id")
+    memory: MemoryStore = kwargs["memory"]
+    session_id: str = kwargs["session_id"]
 
     papers_manager = memory.get_papers_manager(session_id)
     try:
@@ -202,9 +185,7 @@ def stage_paper(
     return f"Successfully staged paper with id={internal_id}"
 
 
-def print_paper(
-    memory: MemoryStore | None = None, session_id: str | None = None, **kwargs: object
-) -> str:
+def print_paper(**kwargs: Any) -> str:
     """
     Print the currently staged paper. Used to Print off an AI paper
 
@@ -216,10 +197,8 @@ def print_paper(
         error message if no paper is staged, the PDF cannot be downloaded, or the
         print command fails.
     """
-    if not memory:
-        raise ValueError("print_paper failed | Need memory")
-    if not session_id:
-        raise ValueError("print_paper failed | Need session_id")
+    memory: MemoryStore = kwargs["memory"]
+    session_id: str = kwargs["session_id"]
 
     if not settings.printer_name:
         return "ERROR: No printer is specified"

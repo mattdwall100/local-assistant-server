@@ -1,9 +1,10 @@
 """get the current time in a human-readable format."""
 
 import datetime
+from typing import Any
 
 
-def get_time(**kwargs: object) -> str:
+def get_time(**kwargs: Any) -> str:
     """
     Get the current local time.
 
@@ -20,7 +21,7 @@ def get_time(**kwargs: object) -> str:
     return now.strftime("%H:%M")
 
 
-def get_date(**kwargs: object) -> str:
+def get_date(**kwargs: Any) -> str:
     """
     Get the current local date.
 
