@@ -1,6 +1,9 @@
 from collections.abc import Callable, Iterator, Sequence
 from typing import Any
+
+from mypy_extensions import KwArg
 from ollama import ChatResponse
+
 from ...core.logging import get_logger
 from .ollama_client import OllamaClient, ToolCall
 
@@ -20,12 +23,12 @@ class LlmService:
         self,
         messages: list[dict[str, str]],
         retrieval_context: list[str] | None,
-        tool_list: list[Callable[[Any], str]] | None,
-    ) -> tuple[str, Sequence[ToolCall] | None  | None]:
+        tool_list: list[Callable[[KwArg(Any)], str]],
+    ) -> tuple[str, Sequence[ToolCall] | None | None]:
         del retrieval_context
         logger.info(f"complete started | messages={messages}")
 
-        return self.client.complete(messages, tool_list)
+        return self.client.complete(messages, tool_list) or []
 
     def stream_complete(
         self,

@@ -40,9 +40,3 @@ class SessionState:
             logger.error(f"Attempted to set messages to non-list of dicts: {new_messages}")
         else:
             self._messages = new_messages
-
-
-
-
-
-

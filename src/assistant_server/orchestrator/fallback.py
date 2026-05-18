@@ -1,4 +1,4 @@
-from collections.abc import Generator
+from collections.abc import Generator, Iterator
 from pathlib import Path
 from typing import Any
 
@@ -27,7 +27,7 @@ class FallbackHandler:
 
     def handle(
         self, event_name: str, exception: Exception, session_id: str
-    ) -> Generator[bytes, Any, Any] | FallbackStream:
+    ) -> Iterator[Any] | FallbackStream:
         if event_name not in self.fallback_message.keys():
             logger.error(f"unknown event_name | event_name={event_name}")
             raise ValueError("Unknown event name")

@@ -20,7 +20,7 @@ from .registry import Registry
 class ToolRegistry:
     """Placeholder tool registry for future function/tool calling."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         # Old style of specifying ollama tools, not currently in use
         self._registry: list[object] = Registry.get()
 
@@ -35,8 +35,8 @@ class ToolRegistry:
             "get_staged_id": get_staged_id,
         }
 
-    def toolList(self) -> list[Callable[[Any], str]]:
+    def toolList(self) -> list[Callable[[KwArg(Any)], str]]:
         return list(self._tools.values())
 
-    def toolDict(self) -> dict[str, Callable[[Any], str]]:
+    def toolDict(self) -> dict[str, Callable[[KwArg(Any)], str]]:
         return self._tools

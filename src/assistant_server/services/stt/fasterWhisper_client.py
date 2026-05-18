@@ -1,6 +1,7 @@
+from io import BytesIO
 from pathlib import Path
 
-from faster_whisper import WhisperModel
+from faster_whisper import WhisperModel  # type: ignore[import-untyped]
 
 from ...core.config import get_settings
 
@@ -21,7 +22,7 @@ class FasterWhisperSTT:
             model_path_or_type, device=stt_device, compute_type="float32", local_files_only=True
         )
 
-    def transcribe(self, audio_bytes: bytes) -> str:
+    def transcribe(self, audio_bytes: BytesIO) -> str:
         """Transcribe the given audio bytes and return the transcribed text."""
         segments, info = self.model.transcribe(audio_bytes)
         text = " ".join(segment.text for segment in segments)

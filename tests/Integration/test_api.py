@@ -35,7 +35,7 @@ def test_chat_endpoint_returns_response_shape() -> None:
 
     # Act
     response = client.post("/chat", json={"text": "hello", "session_id": None})
-                
+
     # Assert
     assert response.status_code == 200
     payload = response.json()

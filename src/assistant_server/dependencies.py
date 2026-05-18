@@ -1,4 +1,5 @@
-from dataclasses import dataclass
+from pydantic import BaseModel, ConfigDict
+
 from .memory.store import MemoryStore
 from .orchestrator.fallback import FallbackHandler
 from .rag.retriever import Retriever
@@ -8,9 +9,6 @@ from .services.tts.base import TtsService
 from .services.tts.piper_client import PiperTTS
 from .tools.base import ToolRegistry
 
-
-from pydantic import ConfigDict, BaseModel
-from pydantic.dataclasses import dataclass
 
 class Services(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)

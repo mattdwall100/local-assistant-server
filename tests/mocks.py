@@ -1,10 +1,10 @@
 from collections.abc import Callable, Generator, Iterable
 
+from assistant_server.dependencies import Services
 from assistant_server.memory.store import MemoryStore
 from assistant_server.orchestrator.fallback import FallbackHandler
 from assistant_server.rag.retriever import Retriever
 from assistant_server.tools.base import ToolRegistry
-from assistant_server.dependencies import Services
 
 
 class MockSttClient:

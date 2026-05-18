@@ -5,6 +5,8 @@ from datetime import datetime
 from io import BytesIO
 from typing import Any
 
+from mypy_extensions import KwArg
+
 from ..api.schemas import FallbackStream
 from ..core.logging import get_logger
 from ..memory.store import MemoryStore
@@ -87,17 +89,23 @@ class AssistantPipeline:
                 logger.error(f"run_llm failed | exception={str(e)}")
                 return self._fallback_handler.handle("llm", e, session_id), session_id
 
-            reply = session_state.response_message
             resolved_id = session_state.session_id
 
             # Give to TTS (Create the audio bytes stream), This generates the stream object,
             # real TTS latency is measured in chunks by the client or in a deeper wrapper
             try:
                 with log_latency(logger, "tts_stream_initialized", session_id=resolved_id):
-                    if not session_state.toolsCalledStatus:
-                        stream_response = self._tts.stream_synthesize(reply)
+                    if session_state.response_message is None:
+                        session_state.response_message = ""
+
+                    if isinstance(session_state.response_message, str):
+                        stream_response = self._tts.stream_synthesize(
+                            session_state.response_message
+                        )
                     else:
-                        stream_response = self._tts.stream_in_stream_out(reply)
+                        stream_response = self._tts.stream_in_stream_out(
+                            session_state.response_message
+                        )
             except Exception as e:
                 # log_latency logs error
                 return self._fallback_handler.handle("tts", e, resolved_id), resolved_id
@@ -212,7 +220,7 @@ class AssistantPipeline:
 
     def call_tool_with_injected_dependencies(
         self,
-        func: Callable[[Any], str],
+        func: Callable[[KwArg(Any)], str],
         func_kwargs: Mapping[str, Any],
         *,  # force label below args
         memory: MemoryStore,

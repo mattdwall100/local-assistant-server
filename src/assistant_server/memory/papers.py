@@ -1,3 +1,5 @@
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 from ..core.logging import get_logger
@@ -19,7 +21,7 @@ class PapersManager:
         self._staged: Paper | None = None
 
     # STARTUP METHODS (used by FETCH TOOLS) -----------------------------------------
-    def save_paper(self, **kwargs) -> None:
+    def save_paper(self, **kwargs: Any) -> None:
         # Run in try catch, if no error, success
 
         if len(self._papers) >= 5:

@@ -3,7 +3,7 @@
 import datetime
 
 
-def get_time(**kwargs) -> str:
+def get_time(**kwargs: object) -> str:
     """
     Get the current local time.
 
@@ -20,7 +20,7 @@ def get_time(**kwargs) -> str:
     return now.strftime("%H:%M")
 
 
-def get_date(**kwargs) -> str:
+def get_date(**kwargs: object) -> str:
     """
     Get the current local date.
 

@@ -4,12 +4,11 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 
-
 from ..api.dependencies import get_orchestrator
 from ..core.logging import get_logger
 from ..orchestrator.pipeline import AssistantPipeline
 from ..utils.latency_logger import log_latency
-from .schemas import ActivityResponse, ChatRequest, ChatResponse, HealthResponse, FallbackStream
+from .schemas import ActivityResponse, ChatRequest, ChatResponse, FallbackStream, HealthResponse
 
 api_router = APIRouter()
 
@@ -31,7 +30,7 @@ def chat(
         session_state = orchestrator.run_llm(payload.text, session_id)
 
         if session_state.response_message is None:
-           session_state.response_message = ""
+            session_state.response_message = ""
         if not isinstance(session_state.response_message, str):
             session_state.response_message = "".join(session_state.response_message)
 
