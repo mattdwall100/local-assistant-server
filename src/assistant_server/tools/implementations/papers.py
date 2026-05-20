@@ -223,7 +223,7 @@ def print_paper(**kwargs: Any) -> str:
         except Exception:
             return "ERROR: Failed to download PDF for"
 
-        command = ["lp", "-c", "-d", printer, str(pdf_path)]
+        command = ["lp", "-o", "sides=two-sided-long-edge", "-c", "-d", printer, str(pdf_path)]
         try:
             subprocess.run(
                 command,
