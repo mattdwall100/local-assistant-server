@@ -17,6 +17,7 @@ def create_app(
     orchestrator = AssistantPipeline(
         stt=services.stt,
         llm=services.llm,
+        routing_llm=services.routing_llm,
         tts=services.tts,
         fallback_handler=services.fallback_handler,
         memory=services.memory,

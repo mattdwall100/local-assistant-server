@@ -18,8 +18,8 @@ ToolCallFunction: TypeAlias = Message.ToolCall.Function
 
 
 class OllamaClient:
-    def __init__(self) -> None:
-        self.model_name = settings.modelname
+    def __init__(self, modelname: str) -> None:
+        self.model_name = modelname
         self.client = ollama
 
     def warmup(self) -> None:
