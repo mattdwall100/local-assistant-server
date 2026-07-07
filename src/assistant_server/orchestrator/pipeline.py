@@ -198,7 +198,7 @@ class AssistantPipeline:
                             memory=self._memory,
                             session_id=session_id,
                         )
-                        messages.append({"role": "assistant", "content": response_message})
+                        #messages.append({"role": "tool_router", "content": response_message})
                         messages.append(
                             {
                                 "role": "tool",
