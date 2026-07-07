@@ -135,9 +135,7 @@ class AssistantPipeline:
             logger, "routing_llm_inference_completed", session_id=session_id, phase="initial_call"
         ):
             # THIS ACTS AS THE ROUTING LLM CALL
-            response_message, tool_calls = self._routing_llm.complete(
-                messages, retrieval_context, tool_list
-            )
+            response_message, tool_calls = self._routing_llm.router_complete(user_prompt, tool_list)
 
         # Save response to chat history
         # messages.append({"role": "assistant", "content": response_message})

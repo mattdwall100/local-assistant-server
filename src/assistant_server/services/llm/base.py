@@ -8,6 +8,7 @@ from ...core.logging import get_logger
 from .ollama_client import OllamaClient, ToolCall
 
 logger = get_logger(__name__)
+DEFAULT_ROUTER_MSG = "You are a model that can do function calling with the following functions"
 
 
 class LlmService:
@@ -18,6 +19,18 @@ class LlmService:
 
     def warmup(self) -> None:
         self.client.warmup()
+
+    def router_complete(
+        self, user_prompt: dict[str, str], tool_list: list[Callable[[KwArg(Any)], str]]
+    ) -> tuple[str, Sequence[ToolCall] | None | None]:
+        logger.info(f"router_complete started | user_prompt={user_prompt}")
+
+        router_messages = [
+            {"role": "developer", "content": DEFAULT_ROUTER_MSG},
+            user_prompt,
+        ]
+
+        return self.client.complete(router_messages, tool_list) or []
 
     def complete(
         self,
