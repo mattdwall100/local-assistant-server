@@ -3,6 +3,7 @@ from collections.abc import Callable, Generator, Iterator, Mapping
 from dataclasses import dataclass
 from datetime import datetime
 from io import BytesIO
+from itertools import chain
 from typing import Any
 
 from mypy_extensions import KwArg
@@ -98,7 +99,7 @@ class AssistantPipeline:
             # Give to TTS (Create the audio bytes stream), This generates the stream object,
             # real TTS latency is measured in chunks by the client or in a deeper wrapper
             try:
-                with log_latency(logger, "tts_stream_initialized", session_id=resolved_id):
+                with log_latency(logger, "tts_stream_setup", session_id=resolved_id):
                     if session_state.response_message is None:
                         session_state.response_message = ""
 
@@ -155,9 +156,7 @@ class AssistantPipeline:
         session_state = self.tool_calling(session_state)
 
         # CHAT LLM STREAM RESPONSE, AND UPDATES CHAT HISTORY
-        with log_latency(
-            logger, "llm_inference_completed", session_id=session_id, phase="post_tool_call"
-        ):
+        with log_latency(logger, "llm_stream_setup", session_id=session_id, phase="post_tool_call"):
             iter_response = self.remember_llm_stream(
                 session_state.messages, session_state.session_id
             )
@@ -239,9 +238,16 @@ class AssistantPipeline:
         buffer = ""
         aggregated_text = []
 
-        sentence_end_pattern = re.compile(r"([.!?]),")
+        # Flush on sentence-ending punctuation followed by whitespace
+        sentence_end_pattern = re.compile(r"[.!?,]+(?=\s)")
+        # Safety flush threshold so long punctuation-free runs still reach TTS
+        max_buffer_chars = 400
 
-        for chunk in token_stream:
+        # Time from first consumption of this generator to first Ollama token
+        with log_latency(logger, "first_llm_token_received", session_id=session_id):
+            first_chunk = next(token_stream, None)
+
+        for chunk in chain([first_chunk] if first_chunk is not None else [], token_stream):
             text = chunk["message"]["content"] or ""
             buffer += text
             aggregated_text.append(text)
@@ -255,6 +261,12 @@ class AssistantPipeline:
                 sentence = buffer[:end_index].strip()
                 buffer = buffer[end_index:]
 
+                if sentence:
+                    yield sentence
+
+            if len(buffer) >= max_buffer_chars:
+                sentence = buffer.strip()
+                buffer = ""
                 if sentence:
                     yield sentence
 

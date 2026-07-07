@@ -1,5 +1,7 @@
 from unittest.mock import patch
 
+from ollama import ChatResponse, Message
+
 from assistant_server.orchestrator.pipeline import AssistantPipeline
 from tests.mocks import create_mock_services
 
@@ -38,6 +40,56 @@ def test_run_pipeline_returns_audio_stream() -> None:
     assert session_id == "session-1"
     assert len(chunks) == 3
     assert all(isinstance(chunk, bytes) for chunk in chunks)
+    assert all(chunk for chunk in chunks)
+
+
+def test_remember_llm_stream_yields_sentences_progressively() -> None:
+    # Arrange
+    services = create_mock_services()
+    pipeline = AssistantPipeline(**services.model_dump())
+
+    tokens = ["Hello there. ", "How are ", "you today? ", "Good."]
+    consumed: list[str] = []
+
+    def fake_stream(messages: list[dict[str, str]]):
+        del messages
+        for token in tokens:
+            consumed.append(token)
+            yield ChatResponse(message=Message(role="assistant", content=token))
+
+    with patch.object(pipeline._llm, "stream_complete", side_effect=fake_stream):
+        # Act
+        stream = pipeline.remember_llm_stream([{"role": "user", "content": "hi"}], "session-1")
+        first_sentence = next(stream)
+
+        # Assert: first sentence yielded after consuming only the first token
+        assert first_sentence == "Hello there."
+        assert consumed == ["Hello there. "]
+
+        # Assert: remaining text arrives split on sentence boundaries
+        assert list(stream) == ["How are you today?", "Good."]
+
+
+def test_remember_llm_stream_flushes_long_unpunctuated_text() -> None:
+    # Arrange
+    services = create_mock_services()
+    pipeline = AssistantPipeline(**services.model_dump())
+
+    tokens = ["word " * 50, "word " * 50, "word " * 50]  # 250 chars each, no punctuation
+
+    def fake_stream(messages: list[dict[str, str]]):
+        del messages
+        for token in tokens:
+            yield ChatResponse(message=Message(role="assistant", content=token))
+
+    with patch.object(pipeline._llm, "stream_complete", side_effect=fake_stream):
+        # Act
+        chunks = list(
+            pipeline.remember_llm_stream([{"role": "user", "content": "hi"}], "session-1")
+        )
+
+    # Assert: safety flush emits chunks instead of buffering the whole run
+    assert len(chunks) == 2
     assert all(chunk for chunk in chunks)
 
 
