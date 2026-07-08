@@ -2,6 +2,7 @@ from collections.abc import Callable
 
 import uvicorn
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from .api.router import api_router
 from .core.config import get_settings
@@ -27,6 +28,16 @@ def create_app(
 
     app = FastAPI(title=get_settings().app_name)
     app.state.orchestrator = orchestrator
+
+    # Allow the browser-based web client (served from file:// or any local origin) to call
+    # this API and read the custom response headers on /speak. No credentials are used.
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_methods=["*"],
+        allow_headers=["*"],
+        expose_headers=["X-Session-ID", "X-Transcript", "X-Tool-Calls", "X-Fallback-TXT"],
+    )
 
     app.include_router(api_router)
     return app
