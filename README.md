@@ -15,6 +15,7 @@ The companion `mic-client` project provides the edge microphone/speaker client. 
 - Custom tool registry with time/date tools and Hugging Face daily paper tools.
 - Graceful fallback handling for STT, LLM, and TTS failures using generated or prerecorded fallback audio.
 - Streaming byte responses for TTS playback by a remote client.
+- Opt-in multiplexed `/speak` stream (`Accept: application/x-ndjson`): per sentence the server emits a `text` frame then its `audio` frames, so a client can render chat text in lockstep with speech. Default callers still receive raw audio. Tool calls and the transcript ride in the `X-Tool-Calls` / `X-Transcript` response headers.
 - Latency logging around API requests, STT, LLM, tool execution, TTS, and full pipeline execution.
 - Docker, Docker Compose, PowerShell helper scripts, and draft systemd/CUDA deployment assets.
 

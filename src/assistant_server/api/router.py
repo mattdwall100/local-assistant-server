@@ -1,13 +1,18 @@
 from io import BytesIO
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import StreamingResponse
 
 from ..api.dependencies import get_orchestrator
 from ..core.logging import get_logger
 from ..orchestrator.pipeline import AssistantPipeline
 from ..utils.latency_logger import log_latency
+from ..utils.streaming import (
+    MULTIPLEX_MEDIA_TYPE,
+    encode_header_text,
+    encode_tool_calls_header,
+)
 from .schemas import ActivityResponse, ChatRequest, ChatResponse, FallbackStream, HealthResponse
 
 api_router = APIRouter()
@@ -91,11 +96,19 @@ def synthesize(
 @api_router.post("/speak")
 async def speak(
     orchestrator: Annotated[AssistantPipeline, Depends(get_orchestrator)],
+    request: Request,
     file: Annotated[UploadFile, File()],
     session_id: Annotated[str | None, Form()] = None,
 ) -> StreamingResponse:
     session_id = session_id or ""
-    logger.info(f"request_received | endpoint=/speak session_id={session_id}")
+
+    # Opt-in content negotiation: raw audio by default, multiplexed text+audio when requested.
+    accept = request.headers.get("accept", "")
+    multiplex = MULTIPLEX_MEDIA_TYPE in accept or request.query_params.get("format") == "multiplex"
+
+    logger.info(
+        f"request_received | endpoint=/speak session_id={session_id} multiplex={multiplex}"
+    )
     with log_latency(logger, "request_completed", endpoint="/speak", session_id=session_id):
         # Recieve raw bytes and format to wrapped BytesIO
         raw_bytes = await file.read()
@@ -103,18 +116,21 @@ async def speak(
         audio_bytes.seek(0)
 
         # Send to pipeline
-        stream_response, resolved_id = orchestrator.run(audio_bytes, session_id)
+        result = orchestrator.run(audio_bytes, session_id, multiplex=multiplex)
 
-        # NOTE May not be necessary anymore
-        # if has .fallback_text, is a AudioStream object, send as is
-        if isinstance(stream_response, FallbackStream):
-            return stream_response
+        # Fallback already returns a fully-formed StreamingResponse (with X-Fallback-TXT)
+        if isinstance(result.stream, FallbackStream):
+            return result.stream
 
-        # Send back the stream response
+        # Send back the stream response. Tool calls + transcript ride in the headers so the
+        # client can render them before the body starts; the body is raw audio or NDJSON.
+        media_type = MULTIPLEX_MEDIA_TYPE if multiplex else "application/octet-stream"
         return StreamingResponse(
-            stream_response,
-            media_type="application/octet-stream",
+            result.stream,
+            media_type=media_type,
             headers={
-                "X-Session-ID": resolved_id or "",
+                "X-Session-ID": result.session_id or "",
+                "X-Tool-Calls": encode_tool_calls_header(result.tool_calls),
+                "X-Transcript": encode_header_text(result.transcript),
             },
         )

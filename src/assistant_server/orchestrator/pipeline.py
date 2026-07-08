@@ -1,5 +1,5 @@
 import re
-from collections.abc import Callable, Generator, Iterator, Mapping
+from collections.abc import Callable, Generator, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from io import BytesIO
@@ -13,13 +13,14 @@ from ..core.logging import get_logger
 from ..memory.store import MemoryStore
 from ..rag.retriever import Retriever
 from ..services.llm.base import LlmService
-from ..services.llm.ollama_client import OllamaClient
+from ..services.llm.ollama_client import OllamaClient, ToolCall
 from ..services.stt.base import SttService
 from ..services.stt.fasterWhisper_client import FasterWhisperSTT
 from ..services.tts.base import TtsService
 from ..services.tts.piper_client import PiperTTS
 from ..tools.base import ToolRegistry
 from ..utils.latency_logger import log_latency
+from ..utils.streaming import tagged_stream_to_ndjson
 from .fallback import FallbackHandler
 from .state import SessionState
 
@@ -33,6 +34,16 @@ logger = get_logger(__name__)
 class PipelineResult:
     text: str
     session_id: str
+
+
+@dataclass(frozen=True)
+class SpeakResult:
+    """Result of a /speak run: the response stream plus metadata for the response headers."""
+
+    stream: Iterator[Any] | FallbackStream
+    session_id: str
+    tool_calls: Sequence[ToolCall]
+    transcript: str
 
 
 class AssistantPipeline:
@@ -64,13 +75,14 @@ class AssistantPipeline:
         self._activity = datetime.now()
 
     def run(
-        self, audio_bytes: BytesIO, session_id: str
-    ) -> tuple[Iterator[Any] | FallbackStream, str]:
+        self, audio_bytes: BytesIO, session_id: str, multiplex: bool = False
+    ) -> SpeakResult:
         """Runs the full STT -> (LLM + tools) -> TTS Pipeline
 
          - "with log_latency" is a context manager to track and log event latency
          - "self.fallback_handler.handle(event_name, e)" attempts to return a graceful degredation
-        of AudioStream's containing fallback audio, with fallback text in header"""
+        of AudioStream's containing fallback audio, with fallback text in header
+         - "multiplex" opts into a text+audio NDJSON stream instead of raw audio bytes"""
 
         logger.info(f"pipeline_started | session_id={session_id}")
         session_id = self._memory.resolve_session(session_id)
@@ -83,7 +95,9 @@ class AssistantPipeline:
                     text = self._stt.transcribe(audio_bytes)
             except Exception as e:
                 # error logged by log_latency error handling
-                return self._fallback_handler.handle("stt", e, session_id), session_id
+                return SpeakResult(
+                    self._fallback_handler.handle("stt", e, session_id), session_id, [], ""
+                )
 
             # Give to LLM for a reply
             try:
@@ -92,9 +106,12 @@ class AssistantPipeline:
             except Exception as e:
                 # no log_latency to log the error here
                 logger.error(f"run_llm failed | exception={str(e)}")
-                return self._fallback_handler.handle("llm", e, session_id), session_id
+                return SpeakResult(
+                    self._fallback_handler.handle("llm", e, session_id), session_id, [], text
+                )
 
             resolved_id = session_state.session_id
+            tool_calls: Sequence[ToolCall] = session_state.tool_calls or []
 
             # Give to TTS (Create the audio bytes stream), This generates the stream object,
             # real TTS latency is measured in chunks by the client or in a deeper wrapper
@@ -103,7 +120,10 @@ class AssistantPipeline:
                     if session_state.response_message is None:
                         session_state.response_message = ""
 
-                    if isinstance(session_state.response_message, str):
+                    stream_response: Iterator[Any] | FallbackStream
+                    if multiplex:
+                        stream_response = self._multiplex_stream(session_state.response_message)
+                    elif isinstance(session_state.response_message, str):
                         stream_response = self._tts.stream_synthesize(
                             session_state.response_message
                         )
@@ -113,9 +133,21 @@ class AssistantPipeline:
                         )
             except Exception as e:
                 # log_latency logs error
-                return self._fallback_handler.handle("tts", e, resolved_id), resolved_id
+                return SpeakResult(
+                    self._fallback_handler.handle("tts", e, resolved_id),
+                    resolved_id,
+                    tool_calls,
+                    text,
+                )
 
-            return stream_response, resolved_id
+            return SpeakResult(stream_response, resolved_id, tool_calls, text)
+
+    def _multiplex_stream(self, response_message: str | Iterator[str]) -> Iterator[bytes]:
+        """Build the NDJSON text+audio byte stream for a multiplexed /speak response."""
+        text_chunks: Iterator[str] = (
+            iter([response_message]) if isinstance(response_message, str) else response_message
+        )
+        return tagged_stream_to_ndjson(self._tts.stream_in_stream_out_tagged(text_chunks))
 
     def run_llm(self, text: str, session_id: str = "") -> SessionState:
         """Main pipeline method: process user input, return response w/ resolved session id."""

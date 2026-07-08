@@ -1,3 +1,4 @@
+import json
 from unittest.mock import patch
 
 from ollama import ChatResponse, Message
@@ -33,14 +34,32 @@ def test_run_pipeline_returns_audio_stream() -> None:
     pipeline = AssistantPipeline(**services.model_dump())
 
     # Act
-    stream, session_id = pipeline.run(b"audio bytes", session_id="session-1")
-    chunks = list(stream)
+    result = pipeline.run(b"audio bytes", session_id="session-1")
+    chunks = list(result.stream)
 
     # Assert
-    assert session_id == "session-1"
+    assert result.session_id == "session-1"
+    assert result.transcript == "mock transcription"
+    assert list(result.tool_calls) == []
     assert len(chunks) == 3
     assert all(isinstance(chunk, bytes) for chunk in chunks)
     assert all(chunk for chunk in chunks)
+
+
+def test_run_pipeline_multiplex_yields_paired_text_and_audio_frames() -> None:
+    # Arrange
+    services = create_mock_services()
+    pipeline = AssistantPipeline(**services.model_dump())
+
+    # Act
+    result = pipeline.run(b"audio bytes", session_id="session-1", multiplex=True)
+    frames = [json.loads(line) for line in b"".join(result.stream).splitlines() if line.strip()]
+
+    # Assert: one text frame, its audio frames, then a terminating done frame
+    types = [frame["type"] for frame in frames]
+    assert frames[0] == {"type": "text", "seq": 0, "data": "mock response message"}
+    assert types.count("audio") == 3
+    assert types[-1] == "done"
 
 
 def test_remember_llm_stream_yields_sentences_progressively() -> None:

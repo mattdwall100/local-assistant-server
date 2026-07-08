@@ -21,6 +21,21 @@ class TtsService:
     def stream_synthesize(self, text: str) -> Iterator[Any]:
         yield from self.voice.stream_synthesize(text)
 
+    def stream_in_stream_out_tagged(
+        self, text_chunks: Iterator[str]
+    ) -> Iterator[tuple[str, Any]]:
+        """Like ``stream_in_stream_out`` but keeps each sentence's text paired with its audio.
+
+        Yields ``("text", sentence)`` immediately followed by that sentence's
+        ``("audio", chunk)`` items, so a multiplexed response can stream them in lockstep.
+        """
+        for text in text_chunks:
+            if not text.strip():
+                continue
+            yield ("text", text)
+            for audio in self.voice.stream_synthesize(text):
+                yield ("audio", audio)
+
     def stream_in_stream_out(self, text_chunks: Iterator[str]) -> Iterator[Any]:
         # Time from first consumption of this generator to first LLM sentence
         with log_latency(logger, "first_tts_text_received"):
