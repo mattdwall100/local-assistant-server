@@ -1,31 +1,31 @@
 {
   "utterance": "what time is it",
-  "measured_runs": 15,
+  "measured_runs": 20,
   "warmup_runs": 3,
   "device": "cpu",
   "routing_model": "functiongemma:latest",
-  "python_peak_working_set_mb": 702.1,
+  "python_peak_working_set_mb": 768.2,
   "end_to_end": {
-    "n": 15,
-    "p50_ms": 15132,
-    "p95_ms": 1049464,
-    "min_ms": 10247,
-    "max_ms": 3417091
+    "n": 20,
+    "p50_ms": 15391,
+    "p95_ms": 33390,
+    "min_ms": 9874,
+    "max_ms": 47636
   },
   "stages": {
     "STT (Faster Whisper)": {
-      "n": 15,
-      "p50_ms": 1265,
-      "p95_ms": 2821,
-      "min_ms": 839,
-      "max_ms": 5570
+      "n": 20,
+      "p50_ms": 972,
+      "p95_ms": 1509,
+      "min_ms": 749,
+      "max_ms": 1543
     },
     "Router LLM (FunctionGemma)": {
-      "n": 15,
-      "p50_ms": 2188,
-      "p95_ms": 5828,
-      "min_ms": 1631,
-      "max_ms": 12968
+      "n": 20,
+      "p50_ms": 2212,
+      "p95_ms": 2923,
+      "min_ms": 2043,
+      "max_ms": 3112
     },
     "Tool execution": {
       "n": 0,
@@ -35,25 +35,25 @@
       "max_ms": 0
     },
     "TTFT (first main-LLM token)": {
-      "n": 15,
-      "p50_ms": 529,
-      "p95_ms": 666,
-      "min_ms": 369,
-      "max_ms": 684
+      "n": 20,
+      "p50_ms": 606,
+      "p95_ms": 682,
+      "min_ms": 326,
+      "max_ms": 770
     },
     "TTS stream setup": {
-      "n": 15,
+      "n": 20,
       "p50_ms": 0,
       "p95_ms": 0,
       "min_ms": 0,
       "max_ms": 0
     },
     "Pipeline (to stream ready)": {
-      "n": 15,
-      "p50_ms": 3344,
-      "p95_ms": 8340,
-      "min_ms": 2897,
-      "max_ms": 18540
+      "n": 20,
+      "p50_ms": 3450,
+      "p95_ms": 4118,
+      "min_ms": 2909,
+      "max_ms": 4154
     }
   }
 }
