@@ -1,120 +1,109 @@
-# Local AI Assistant Server
+# Local AI Assistant — Server
 
-**Entirely manually coded **without** AI coding agents.**
-Python/FastAPI backend for a local-first voice assistant. The server owns the AI-heavy work: speech-to-text, LLM inference, tool execution, session memory, text-to-speech, and streamed audio responses. It is designed to run on a local Linux host or Docker container and serve lightweight microphone clients over the local network.
+**A voice assistant that runs entirely on your own machine. Speak to it, it speaks back — no
+cloud, no API keys, no data leaving the box.** You hold a key to talk; it transcribes your speech,
+decides whether to call a tool, generates a reply, and streams the spoken answer back.
 
-The companion `mic-client` project provides the edge microphone/speaker client. The client records audio and plays responses; this server performs inference and orchestration.
+**Entirely manually coded — without AI coding agents.** Apache-2.0.
 
-## What It Implements
+This is the brain of the system. Two companion repos provide the microphone clients
+([mic-client](https://github.com/mattdwall100/mic-client)) and the on-demand start/stop control
+plane ([server-lifecycle-manager](https://github.com/mattdwall100/server-lifecycle-manager)). The
+tool-routing model is my own fine-tune —
+[FunctionGemma-Finetune](https://github.com/mattdwall100/FunctionGemma-Finetune).
 
-- FastAPI API with `/health`, `/activity`, `/chat`, `/transcribe`, `/synthesize`, and `/speak`.
-- Full voice pipeline: audio upload -> Faster Whisper STT -> Ollama LLM -> optional tool calls -> Piper TTS audio stream.
-- Local inference focus using Ollama, Faster Whisper, Piper, ONNX voice assets, and configurable CPU/GPU STT device selection.
-- Automated Pytest Unit and Integration suite 85%+ coverage
-- Session-scoped in-memory conversation and paper/tool state.
-- Custom tool registry with time/date tools and Hugging Face daily paper tools.
-- Graceful fallback handling for STT, LLM, and TTS failures using generated or prerecorded fallback audio.
-- Streaming byte responses for TTS playback by a remote client.
-- Opt-in multiplexed `/speak` stream (`Accept: application/x-ndjson`): per sentence the server emits a `text` frame then its `audio` frames, so a client can render chat text in lockstep with speech. Default callers still receive raw audio. Tool calls and the transcript ride in the `X-Tool-Calls` / `X-Transcript` response headers.
-- Latency logging around API requests, STT, LLM, tool execution, TTS, and full pipeline execution.
-- Docker, Docker Compose, PowerShell helper scripts, and draft systemd/CUDA deployment assets.
+## Architecture
 
-## Technologies
-
-- Python 3.11-3.13
-- FastAPI, Starlette, Uvicorn
-- Pydantic v2, pydantic-settings
-- Ollama Python client
-- faster-whisper, CTranslate2
-- Piper TTS, ONNX Runtime
-- Hugging Face Hub API
-- pytest, pytest-cov
-- Ruff, mypy
-- Docker, Docker Compose, systemd assets
-
-## Engineering Practices Demonstrated
-
-- Modular layered structure: API, orchestration, services, memory, tools, RAG extension point, config, logging.
-- Dependency injection through `create_app(service_factory=...)`, enabling tests to replace real model clients with mocks.
-- Typed request/response schemas and centralized environment configuration.
-- Local-first architecture with clear client/server separation.
-- Production-style observability through structured log messages and reusable latency measurement.
-- Fault-tolerant pipeline design with fallback audio/text paths.
-- Automated Unit, Integration test coverage for API contracts, streaming, pipeline behavior, memory, tools, and fallback flows.
-- Deployment-aware design for local network hosting, containerization, and long-running Linux service operation.
-
-## Repository Structure
-
-```text
-local-assistant-server/
-|-- src/
-|   `-- assistant_server/
-|       |-- main.py                    # FastAPI app factory and Uvicorn entrypoint
-|       |-- dependencies.py            # Service construction and app wiring
-|       |-- api/
-|       |   |-- router.py              # HTTP endpoints
-|       |   |-- schemas.py             # Pydantic request/response models
-|       |   `-- dependencies.py        # API dependency providers
-|       |-- core/
-|       |   |-- config.py              # Environment-backed settings
-|       |   `-- logging.py             # Logging setup
-|       |-- memory/
-|       |   |-- store.py               # Session memory
-|       |   `-- papers.py              # Session-scoped paper state
-|       |-- orchestrator/
-|       |   |-- pipeline.py            # STT -> LLM/tools -> TTS pipeline
-|       |   |-- fallback.py            # Failure handling and fallback streams
-|       |   `-- state.py               # Session state object
-|       |-- services/
-|       |   |-- llm/                   # Ollama abstraction
-|       |   |-- stt/                   # Faster Whisper abstraction
-|       |   `-- tts/                   # Piper abstraction
-|       |-- tools/
-|       |   |-- base.py                # Tool registry
-|       |   |-- registry.py            # Legacy function schema registry
-|       |   `-- implementations/       # Time/date and paper tools
-|       |-- rag/
-|       |   `-- retriever.py           # RAG extension point
-|       `-- utils/
-|           `-- latency_logger.py      # Latency context manager
-|-- tests/
-|   |-- Unit/                          # Unit tests for pipeline, memory, tools, fallback
-|   |-- Integration/                   # API, streaming, fallback, paper-flow tests
-|   |-- conftest.py
-|   `-- mocks.py                       # Mock STT/LLM/TTS services
-|-- models/
-|   |-- llm/                           # Ollama modelfiles
-|   `-- tts/                           # Piper ONNX voices
-|-- assets/
-|   |-- fallback_audio/                # Server fallback WAV files
-|   |-- PROJECT_CONTEXT.md
-|   `-- architecture.md
-|-- deployment/
-|   `-- systemd/local-assistant.service
-|-- scripts/
-|   |-- bootstrap.ps1
-|   `-- run_server.ps1
-|-- misc/
-|   |-- Dockerfile_cuda
-|   `-- docker-compose-cuda.yml
-|-- Dockerfile
-|-- docker-compose.yml
-|-- pyproject.toml
-|-- requirements.txt
-|-- requirements-dev.txt
-`-- .env.example
+```mermaid
+flowchart LR
+    subgraph Client
+      MC["mic-client / web-client<br/>push-to-talk"]
+    end
+    subgraph Server["assistant-server :8000"]
+      direction TB
+      STT["Faster Whisper<br/>tiny fp32 (CPU)"] --> RT["FunctionGemma router<br/>(fine-tuned, 270M)"]
+      RT --> TOOLS["tool execution<br/>time · date · papers"]
+      TOOLS --> LLM["Granite 4 main LLM<br/>(Ollama :11434)"]
+      LLM --> TTS["Piper TTS<br/>(streamed audio)"]
+    end
+    LM["lifecycle-manager :9000"]
+    MC -->|"POST /speak (WAV)"| STT
+    TTS -->|"streamed audio, or NDJSON text+audio"| MC
+    MC -.->|"start / stop"| LM
+    LM -.->|"docker compose up/stop · idle 300s → unload Ollama"| Server
+    Server -.->|"GET /activity"| LM
 ```
 
-## Running Locally
+A `/speak` request flows: **audio → STT → router LLM (which tools?) → tool execution → main LLM
+(streamed) → TTS → streamed audio back.** Every stage has a fallback so a failure degrades to a
+spoken apology instead of a crash.
 
-This project currently targets Python `>=3.11,<3.14`.
+## Headline numbers
+
+Measured on **CPU only (no GPU)** via [`scripts/benchmark.py`](scripts/benchmark.py), which drives
+the real pipeline end-to-end (Piper speaks a fixed prompt, fed back through the whole stack), n=15
+after 3 warmups. Utterance: *"what time is it"* (exercises STT + routing + a tool call + LLM + TTS).
+
+| Metric | p50 | p95 |
+| --- | ---: | ---: |
+| **Time to first audio** (request → first spoken chunk ready) | **~3.6 s** | ~4.7 s |
+| Speech-to-text (Faster Whisper tiny) | ~1.7 s | ~1.8 s |
+| Router LLM decision (FunctionGemma) | ~2.0 s | ~2.9 s |
+| **TTFT** — first main-LLM token | **~0.5 s** | ~0.5 s |
+| Full spoken reply generated (whole utterance) | ~17 s | ~34 s |
+
+| Resource | Measured |
+| --- | --- |
+| **Total RAM to serve** | **~3.2 GB** (352 MB pipeline process + ~2.8 GB Ollama models) |
+| Models on disk | STT 144 MB · TTS 60 MB · router ~325 MB · main LLM (Granite 4) ~2.1 GB |
+| GPU | **None required** — runs 100% on CPU. Optional CUDA image in `misc/`. |
+| Test coverage | **85%** across 39 tests (`pytest --cov`) |
+
+The whole voice assistant — STT, a fine-tuned router, a multi-billion-parameter LLM, and neural
+TTS — fits in **~3.2 GB of RAM on a CPU-only machine**. Numbers regenerate with
+`.\.venv\Scripts\python.exe scripts\benchmark.py` → [`benchmarks/results.json`](benchmarks).
+
+## The router is a model I trained
+
+Tool routing isn't done with hand-written `if` statements or an off-the-shelf model. It's a
+**FunctionGemma-270m fine-tune I trained myself**, which took tool-call accuracy from **63.5% →
+99.5%**, then merged, converted to GGUF, and published to the Hugging Face Hub — and it now runs
+here as the router via Ollama. It reads the user utterance plus the available tool schemas and
+decides which tool to call, or to call none and just reply. Full training pipeline and dataset
+write-up: [FunctionGemma-Finetune](https://github.com/mattdwall100/FunctionGemma-Finetune).
+
+## Models
+
+| Role | Model | Notes |
+| --- | --- | --- |
+| Speech-to-text | Faster Whisper **tiny**, fp32, English | CPU by default |
+| Tool router | **Fine-tuned FunctionGemma-270m** (GGUF) | via Ollama; see repo above |
+| Main LLM | IBM **Granite 4** (also Qwen2.5-1.5B) | via Ollama, custom "Alfred" persona |
+| Text-to-speech | **Piper** `en_GB-alan-medium` (ONNX) | streamed audio out |
+
+## API
+
+`GET /health` · `GET /activity` (idle tracking) · `POST /chat` (text) ·
+`POST /transcribe` (WAV → text) · `POST /synthesize` (text → audio) ·
+`POST /speak` (WAV → full pipeline audio).
+
+**`/speak` streams two ways.** By default it returns raw audio. With
+`Accept: application/x-ndjson` (or `?format=multiplex`) it returns an **NDJSON stream that
+interleaves `text` and `audio` frames per sentence**, so a client can render the transcript in
+lockstep with speech. The transcript and any tool calls also ride in the `X-Transcript` and
+`X-Tool-Calls` response headers.
+
+## Running locally
+
+Requires [Ollama](https://ollama.com) running with the models pulled (main LLM + the FunctionGemma
+router). Python 3.11–3.13.
 
 ```powershell
-.\scripts\bootstrap.ps1
-.\scripts\run_server.ps1
+.\scripts\bootstrap.ps1      # create .venv, install deps
+.\scripts\run_server.ps1     # serves on 0.0.0.0:8000
 ```
 
-The server listens on the configured `API_HOST` and `API_PORT` values. Defaults are `0.0.0.0:8000`.
+Docker (`docker-compose.yml`) and a CUDA variant (`misc/`) are also provided.
 
 ## Testing
 
@@ -122,10 +111,42 @@ The server listens on the configured `API_HOST` and `API_PORT` values. Defaults 
 .\.venv\Scripts\python.exe -m pytest
 ```
 
-The test suite uses mock model clients so most API and orchestration behavior can be tested without starting Ollama, Faster Whisper, or Piper.
+39 tests, **85% coverage**. STT/LLM/TTS are mocked (`tests/mocks.py`), so most API and
+orchestration behavior is testable without starting Ollama, Whisper, or Piper.
 
-## Current Notes
+## Design notes
 
-- RAG is represented by a clean retriever extension point, but retrieval is not yet implemented.
-- Raspberry Pi and wake-word support live in the client roadmap, not this server.
-- Some deployment assets are templates/drafts and should be reviewed before production use.
+- **Dependency injection** via `create_app(service_factory=...)`, which is what lets the tests swap
+  real model clients for mocks.
+- **Two-stage LLM:** a lightweight router decides tool calls; the main LLM streams the reply,
+  which is sentence-buffered before being handed to TTS so speech starts as early as possible.
+- **Fault tolerant:** STT/LLM/TTS failures fall back to generated or prerecorded audio rather than
+  erroring the request.
+- **Observability:** every stage is wrapped in a `log_latency` context manager
+  (`utils/latency_logger.py`) — the same instrumentation the benchmark reads.
+- **Layered structure:** `api/` · `orchestrator/` · `services/{stt,llm,tts}` · `tools/` ·
+  `memory/` · `rag/` (retrieval extension point) · `core/` config & logging.
+
+## Repository structure
+
+```text
+src/assistant_server/
+├── main.py                 # FastAPI app factory + Uvicorn entrypoint
+├── dependencies.py         # service construction / DI wiring
+├── api/                    # HTTP endpoints + request/response schemas
+├── orchestrator/           # pipeline.py (STT→router→tools→LLM→TTS), fallback, state
+├── services/               # llm/ (Ollama), stt/ (Faster Whisper), tts/ (Piper)
+├── tools/                  # tool registry + implementations (time, papers)
+├── memory/                 # session memory + paper state
+├── rag/                    # retriever extension point (not yet implemented)
+└── utils/                  # latency logging, NDJSON streaming
+scripts/benchmark.py        # end-to-end latency + memory benchmark
+tests/                      # Unit/ + Integration/, mock model clients
+```
+
+## Current notes
+
+- RAG is a clean extension point (`rag/retriever.py`), retrieval not yet implemented.
+- Wake-word and Raspberry Pi support live in the client roadmap, not this server; input is
+  push-to-talk (no VAD).
+- Some deployment assets (systemd, CUDA) are drafts — review before production use.
