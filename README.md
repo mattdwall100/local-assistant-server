@@ -41,26 +41,26 @@ spoken apology instead of a crash.
 ## Headline numbers
 
 Measured on **CPU only (no GPU)** via [`scripts/benchmark.py`](scripts/benchmark.py), which drives
-the real pipeline end-to-end (Piper speaks a fixed prompt, fed back through the whole stack), n=15
+the real pipeline end-to-end (Piper speaks a fixed prompt, fed back through the whole stack), n=20
 after 3 warmups. Utterance: *"what time is it"* (exercises STT + routing + a tool call + LLM + TTS).
 
 | Metric | p50 | p95 |
 | --- | ---: | ---: |
-| **Time to first audio** (request → first spoken chunk ready) | **~3.6 s** | ~4.7 s |
-| Speech-to-text (Faster Whisper tiny) | ~1.7 s | ~1.8 s |
-| Router LLM decision (FunctionGemma) | ~2.0 s | ~2.9 s |
-| **TTFT** — first main-LLM token | **~0.5 s** | ~0.5 s |
-| Full spoken reply generated (whole utterance) | ~17 s | ~34 s |
+| **Time to first audio** (request → first spoken chunk ready) | **~3.5 s** | ~4.1 s |
+| Speech-to-text (Faster Whisper tiny) | ~1.0 s | ~1.5 s |
+| Router LLM decision (FunctionGemma) | ~2.2 s | ~2.9 s |
+| **TTFT** — first main-LLM token | **~0.6 s** | ~0.7 s |
+| Full spoken reply generated (whole utterance) | ~15 s | ~33 s |
 
 | Resource | Measured |
 | --- | --- |
-| **Total RAM to serve** | **~3.2 GB** (352 MB pipeline process + ~2.8 GB Ollama models) |
+| **Total RAM to serve** | **~3.6 GB** (~770 MB pipeline process + ~2.8 GB Ollama models) |
 | Models on disk | STT 144 MB · TTS 60 MB · router ~325 MB · main LLM (Granite 4) ~2.1 GB |
 | GPU | **None required** — runs 100% on CPU. Optional CUDA image in `misc/`. |
 | Test coverage | **85%** across 39 tests (`pytest --cov`) |
 
 The whole voice assistant — STT, a fine-tuned router, a multi-billion-parameter LLM, and neural
-TTS — fits in **~3.2 GB of RAM on a CPU-only machine**. Numbers regenerate with
+TTS — fits in **~3.6 GB of RAM on a CPU-only machine**. Numbers regenerate with
 `.\.venv\Scripts\python.exe scripts\benchmark.py` → [`benchmarks/results.json`](benchmarks).
 
 ## The router is a model I trained
